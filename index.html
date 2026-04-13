@@ -5,7 +5,401 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <meta name="theme-color" content="#4f7cff" />
   <title>毎朝日記</title>
-  <link rel="stylesheet" href="style.css" />
+  <style>
+/* =============================
+   リセット & ベース
+   ============================= */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --primary: #4f7cff;
+  --danger: #e05252;
+  --bg: #f4f6fb;
+  --card: #ffffff;
+  --text: #1a1a2e;
+  --muted: #6b7280;
+  --border: #e2e8f0;
+  --radius: 16px;
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+
+html, body {
+  height: 100%;
+  font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 16px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* =============================
+   ヘッダー
+   ============================= */
+header {
+  background: var(--primary);
+  color: #fff;
+  padding: 16px 20px 12px;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+header h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: 0.04em; }
+#today-date { font-size: 0.85rem; opacity: 0.85; }
+
+/* =============================
+   タブナビ
+   ============================= */
+.tab-nav {
+  display: flex;
+  background: var(--card);
+  border-bottom: 2px solid var(--border);
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 14px 0;
+  border: none;
+  background: transparent;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  transition: color 0.2s;
+}
+
+.tab-btn.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+
+/* =============================
+   タブコンテンツ
+   ============================= */
+.tab-content {
+  display: none;
+  padding: 20px 16px 40px;
+  max-width: 540px;
+  margin: 0 auto;
+}
+
+.tab-content.active { display: block; }
+
+/* =============================
+   カメラエリア
+   ============================= */
+.camera-area {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+#camera-video,
+#photo-preview {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  display: block;
+  background: #111;
+}
+
+#camera-video[hidden],
+#photo-preview[hidden] { display: none; }
+
+.camera-placeholder {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: var(--bg);
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.camera-placeholder span { font-size: 3rem; }
+
+.camera-controls {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  padding: 16px;
+  flex-wrap: wrap;
+}
+
+/* =============================
+   ボタン
+   ============================= */
+.btn-primary, .btn-secondary, .btn-capture, .btn-save, .btn-delete {
+  border: none;
+  border-radius: 50px;
+  padding: 12px 28px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+}
+
+.btn-primary, .btn-capture { background: var(--primary); color: #fff; }
+.btn-secondary { background: var(--border); color: var(--text); }
+.btn-capture { padding: 14px 36px; font-size: 1.05rem; }
+
+.btn-save {
+  width: 100%;
+  background: var(--primary);
+  color: #fff;
+  padding: 16px;
+  font-size: 1.05rem;
+  border-radius: var(--radius);
+  margin-top: 8px;
+}
+
+.btn-delete {
+  width: 100%;
+  background: var(--danger);
+  color: #fff;
+  padding: 12px;
+  font-size: 0.95rem;
+  border-radius: var(--radius);
+  margin-top: 12px;
+}
+
+button:active { opacity: 0.8; transform: scale(0.97); }
+
+/* =============================
+   フォームエリア
+   ============================= */
+.form-area {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.input-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.weight-row { display: flex; align-items: center; gap: 10px; }
+
+.weight-adj {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid var(--primary);
+  background: transparent;
+  color: var(--primary);
+  font-size: 1.3rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+
+.weight-adj:active { background: var(--primary); color: #fff; }
+
+#weight-input {
+  flex: 1;
+  text-align: center;
+  font-size: 1.8rem;
+  font-weight: 700;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 8px;
+  outline: none;
+  color: var(--text);
+  transition: border-color 0.2s;
+}
+
+#weight-input:focus { border-color: var(--primary); }
+#weight-input::-webkit-inner-spin-button,
+#weight-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+#memo-input {
+  width: 100%;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 0.95rem;
+  resize: vertical;
+  font-family: inherit;
+  outline: none;
+  color: var(--text);
+  transition: border-color 0.2s;
+}
+
+#memo-input:focus { border-color: var(--primary); }
+
+/* =============================
+   トースト
+   ============================= */
+.toast {
+  position: fixed;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1a1a2e;
+  color: #fff;
+  padding: 12px 28px;
+  border-radius: 50px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+  z-index: 1000;
+  animation: fadeInUp 0.3s ease, fadeOut 0.4s ease 1.6s forwards;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateX(-50%) translateY(16px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+@keyframes fadeOut { to { opacity: 0; } }
+
+/* =============================
+   履歴リスト
+   ============================= */
+.empty-state {
+  text-align: center;
+  color: var(--muted);
+  padding: 60px 0;
+  line-height: 1.8;
+}
+
+.history-list { list-style: none; display: flex; flex-direction: column; gap: 14px; }
+
+.history-item {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+
+.history-item:active { transform: scale(0.98); }
+
+.history-thumb {
+  width: 72px;
+  height: 72px;
+  border-radius: 12px;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--bg);
+}
+
+.history-thumb-placeholder {
+  width: 72px;
+  height: 72px;
+  border-radius: 12px;
+  background: var(--bg);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+}
+
+.history-info { flex: 1; min-width: 0; }
+.history-date { font-size: 0.8rem; color: var(--muted); margin-bottom: 4px; }
+.history-weight { font-size: 1.4rem; font-weight: 700; color: var(--primary); }
+
+.history-memo {
+  font-size: 0.85rem;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 4px;
+}
+
+/* =============================
+   モーダル
+   ============================= */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+}
+
+.modal-card {
+  position: relative;
+  background: var(--card);
+  border-radius: 24px 24px 0 0;
+  padding: 24px 20px 36px;
+  width: 100%;
+  max-width: 540px;
+  max-height: 90vh;
+  overflow-y: auto;
+  z-index: 1;
+  animation: slideUp 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+.modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: var(--bg);
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-date { font-size: 0.85rem; color: var(--muted); margin-bottom: 14px; font-weight: 600; }
+
+#modal-photo {
+  width: 100%;
+  border-radius: 16px;
+  margin-bottom: 16px;
+  display: block;
+}
+
+.modal-weight { font-size: 2rem; font-weight: 700; color: var(--primary); text-align: center; margin-bottom: 8px; }
+.modal-memo { color: var(--muted); font-size: 0.95rem; text-align: center; white-space: pre-wrap; margin-bottom: 8px; }
+  </style>
 </head>
 <body>
   <header>
@@ -36,19 +430,10 @@
     </div>
 
     <div class="form-area">
-      <label class="input-label" for="weight-input">
-        体重 (kg)
-      </label>
+      <label class="input-label" for="weight-input">体重 (kg)</label>
       <div class="weight-row">
         <button class="weight-adj" data-delta="-0.1">−</button>
-        <input
-          id="weight-input"
-          type="number"
-          step="0.1"
-          min="0"
-          max="300"
-          placeholder="例: 65.5"
-        />
+        <input id="weight-input" type="number" step="0.1" min="0" max="300" placeholder="例: 65.5" />
         <button class="weight-adj" data-delta="+0.1">＋</button>
       </div>
 
@@ -69,7 +454,7 @@
     <ul id="history-list" class="history-list"></ul>
   </section>
 
-  <!-- エントリ詳細モーダル -->
+  <!-- 詳細モーダル -->
   <div id="detail-modal" class="modal" hidden>
     <div class="modal-backdrop"></div>
     <div class="modal-card">
@@ -82,6 +467,237 @@
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <script>
+'use strict';
+
+const STORAGE_KEY = 'dailyjournal_entries';
+let stream = null;
+let capturedDataUrl = null;
+
+/* ── ユーティリティ ── */
+function formatDate(isoString) {
+  const d = new Date(isoString);
+  const w = ['日','月','火','水','木','金','土'];
+  return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${w[d.getDay()]}）`;
+}
+
+function todayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function loadEntries() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+  catch { return []; }
+}
+
+function saveEntries(entries) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+}
+
+function showToast(msg) {
+  const t = document.getElementById('save-toast');
+  t.textContent = msg;
+  t.hidden = false;
+  t.style.animation = 'none';
+  void t.offsetWidth;
+  t.style.animation = '';
+  setTimeout(() => { t.hidden = true; }, 2100);
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+          .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+/* ── ヘッダー日付 ── */
+function initHeader() {
+  const w = ['日','月','火','水','木','金','土'], d = new Date();
+  document.getElementById('today-date').textContent =
+    `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}（${w[d.getDay()]}）`;
+}
+
+/* ── タブ ── */
+function initTabs() {
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+      if (btn.dataset.tab === 'history') renderHistory();
+    });
+  });
+}
+
+/* ── カメラ ── */
+function initCamera() {
+  const video       = document.getElementById('camera-video');
+  const canvas      = document.getElementById('camera-canvas');
+  const preview     = document.getElementById('photo-preview');
+  const placeholder = document.getElementById('camera-placeholder');
+  const btnStart    = document.getElementById('btn-start-camera');
+  const btnCap      = document.getElementById('btn-capture');
+  const btnRetake   = document.getElementById('btn-retake');
+
+  btnStart.addEventListener('click', startCamera);
+  btnCap.addEventListener('click', capturePhoto);
+  btnRetake.addEventListener('click', retake);
+
+  async function startCamera() {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'user', width: { ideal: 720 }, height: { ideal: 960 } },
+        audio: false,
+      });
+      video.srcObject = stream;
+      placeholder.hidden = true;
+      video.hidden = false;
+      btnStart.hidden = true;
+      btnCap.hidden = false;
+      capturedDataUrl = null;
+    } catch (err) {
+      alert('カメラを起動できませんでした。\nブラウザのアドレスバーでカメラの許可をしてください。');
+      console.error(err);
+    }
+  }
+
+  function capturePhoto() {
+    canvas.width  = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.translate(canvas.width, 0);
+    ctx.scale(-1, 1);
+    ctx.drawImage(video, 0, 0);
+    capturedDataUrl = canvas.toDataURL('image/jpeg', 0.75);
+    stopStream();
+    video.hidden = true;
+    preview.src = capturedDataUrl;
+    preview.hidden = false;
+    btnCap.hidden = true;
+    btnRetake.hidden = false;
+  }
+
+  function retake() {
+    capturedDataUrl = null;
+    preview.hidden = true;
+    preview.src = '';
+    btnRetake.hidden = true;
+    startCamera();
+  }
+}
+
+function stopStream() {
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+}
+
+/* ── 体重 ＋/− ── */
+function initWeightControls() {
+  document.querySelectorAll('.weight-adj').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const input = document.getElementById('weight-input');
+      const delta = parseFloat(btn.dataset.delta);
+      const next = Math.max(0, Math.round((parseFloat(input.value)||0) + delta * 10) / 10);
+      input.value = next.toFixed(1);
+    });
+  });
+}
+
+/* ── 保存 ── */
+function initSave() {
+  document.getElementById('btn-save').addEventListener('click', () => {
+    const weight = parseFloat(document.getElementById('weight-input').value);
+    const memo   = document.getElementById('memo-input').value.trim();
+
+    if (!capturedDataUrl && !confirm('写真が撮影されていません。体重だけで保存しますか？')) return;
+    if (isNaN(weight) && !confirm('体重が入力されていません。このまま保存しますか？')) return;
+
+    const entries = loadEntries();
+    const key = todayKey();
+    const idx = entries.findIndex(e => e.date === key);
+    const entry = { date: key, ts: new Date().toISOString(), weight: isNaN(weight)?null:weight, memo, photo: capturedDataUrl||null };
+
+    if (idx !== -1) {
+      if (!confirm('今日の記録がすでにあります。上書きしますか？')) return;
+      entries[idx] = entry;
+    } else {
+      entries.unshift(entry);
+    }
+
+    saveEntries(entries);
+    showToast('保存しました！');
+    document.getElementById('weight-input').value = '';
+    document.getElementById('memo-input').value = '';
+  });
+}
+
+/* ── 履歴 ── */
+function renderHistory() {
+  const entries = loadEntries();
+  const list  = document.getElementById('history-list');
+  const empty = document.getElementById('history-empty');
+  list.innerHTML = '';
+
+  if (entries.length === 0) {
+    empty.hidden = false; list.hidden = true; return;
+  }
+  empty.hidden = true; list.hidden = false;
+
+  entries.forEach(entry => {
+    const li = document.createElement('li');
+    li.className = 'history-item';
+    li.innerHTML = `
+      ${entry.photo
+        ? `<img class="history-thumb" src="${entry.photo}" alt="写真" />`
+        : `<div class="history-thumb-placeholder">🙂</div>`}
+      <div class="history-info">
+        <div class="history-date">${formatDate(entry.date + 'T00:00:00')}</div>
+        <div class="history-weight">${entry.weight!=null ? entry.weight.toFixed(1)+' kg' : '—'}</div>
+        ${entry.memo ? `<div class="history-memo">${escapeHtml(entry.memo)}</div>` : ''}
+      </div>`;
+    li.addEventListener('click', () => openDetail(entry));
+    list.appendChild(li);
+  });
+}
+
+/* ── モーダル ── */
+function initModal() {
+  const modal   = document.getElementById('detail-modal');
+  const close   = () => { modal.hidden = true; };
+  modal.querySelector('.modal-backdrop').addEventListener('click', close);
+  modal.querySelector('.modal-close').addEventListener('click', close);
+
+  document.getElementById('modal-delete').addEventListener('click', () => {
+    if (!confirm('この記録を削除しますか？')) return;
+    saveEntries(loadEntries().filter(e => e.date !== modal.dataset.entryDate));
+    close();
+    renderHistory();
+  });
+}
+
+function openDetail(entry) {
+  const modal = document.getElementById('detail-modal');
+  modal.dataset.entryDate = entry.date;
+  document.getElementById('modal-date').textContent = formatDate(entry.date + 'T00:00:00');
+
+  const photo = document.getElementById('modal-photo');
+  if (entry.photo) { photo.src = entry.photo; photo.hidden = false; }
+  else { photo.hidden = true; photo.src = ''; }
+
+  document.getElementById('modal-weight').textContent = entry.weight!=null ? `${entry.weight.toFixed(1)} kg` : '体重未記録';
+  document.getElementById('modal-memo').textContent   = entry.memo || '';
+  modal.hidden = false;
+}
+
+/* ── 初期化 ── */
+document.addEventListener('DOMContentLoaded', () => {
+  initHeader();
+  initTabs();
+  initCamera();
+  initWeightControls();
+  initSave();
+  initModal();
+});
+  </script>
 </body>
 </html>
