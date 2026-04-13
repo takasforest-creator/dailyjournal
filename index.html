@@ -21,7 +21,11 @@
   <!-- 記録タブ -->
   <section id="tab-record" class="tab-content active">
     <div class="camera-area">
-      <video id="camera-video" autoplay playsinline></video>
+      <div id="camera-placeholder" class="camera-placeholder">
+        <span>🤳</span>
+        <p>「カメラを起動」を押して撮影</p>
+      </div>
+      <video id="camera-video" autoplay playsinline hidden></video>
       <canvas id="camera-canvas" hidden></canvas>
       <img id="photo-preview" alt="撮影した写真" hidden />
       <div class="camera-controls">
@@ -71,7 +75,7 @@
     <div class="modal-card">
       <button class="modal-close">✕</button>
       <p id="modal-date" class="modal-date"></p>
-      <img id="modal-photo" alt="写真" />
+      <img id="modal-photo" alt="写真" hidden />
       <p id="modal-weight" class="modal-weight"></p>
       <p id="modal-memo" class="modal-memo"></p>
       <button id="modal-delete" class="btn-delete">削除</button>

@@ -74,12 +74,13 @@ function initTabs() {
    カメラ
    ========================================= */
 function initCamera() {
-  const video    = document.getElementById('camera-video');
-  const canvas   = document.getElementById('camera-canvas');
-  const preview  = document.getElementById('photo-preview');
-  const btnStart = document.getElementById('btn-start-camera');
-  const btnCap   = document.getElementById('btn-capture');
-  const btnRetake = document.getElementById('btn-retake');
+  const video       = document.getElementById('camera-video');
+  const canvas      = document.getElementById('camera-canvas');
+  const preview     = document.getElementById('photo-preview');
+  const placeholder = document.getElementById('camera-placeholder');
+  const btnStart    = document.getElementById('btn-start-camera');
+  const btnCap      = document.getElementById('btn-capture');
+  const btnRetake   = document.getElementById('btn-retake');
 
   btnStart.addEventListener('click', startCamera);
   btnCap.addEventListener('click', capturePhoto);
@@ -92,6 +93,7 @@ function initCamera() {
         audio: false,
       });
       video.srcObject = stream;
+      placeholder.hidden = true;
       video.hidden = false;
       btnStart.hidden = true;
       btnCap.hidden = false;
@@ -126,6 +128,7 @@ function initCamera() {
     preview.hidden = true;
     preview.src = '';
     btnRetake.hidden = true;
+    placeholder.hidden = true;
     startCamera();
   }
 }
