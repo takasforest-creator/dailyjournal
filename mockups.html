@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UI案 比較</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', sans-serif;
+      background: #f0f0f0;
+      padding: 24px 16px 60px;
+    }
+    h1 {
+      text-align: center;
+      font-size: 1.2rem;
+      color: #333;
+      margin-bottom: 8px;
+    }
+    .subtitle {
+      text-align: center;
+      font-size: 0.85rem;
+      color: #888;
+      margin-bottom: 32px;
+    }
+
+    /* 3カラム並列 */
+    .cols {
+      display: flex;
+      gap: 24px;
+      justify-content: center;
+      flex-wrap: wrap;
+      align-items: flex-start;
+    }
+
+    .col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+      min-width: 320px;
+      max-width: 375px;
+    }
+
+    .col-label {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #333;
+      text-align: center;
+    }
+
+    .col-desc {
+      font-size: 0.8rem;
+      color: #666;
+      text-align: center;
+      line-height: 1.6;
+      margin-bottom: 4px;
+    }
+
+    /* スマホフレーム */
+    .phone {
+      width: 100%;
+      border-radius: 40px;
+      overflow: hidden;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.18);
+      border: 8px solid #1a1a1a;
+      background: #fff;
+      position: relative;
+    }
+
+    .phone-screen {
+      width: 100%;
+      overflow: hidden;
+    }
+
+    /* タブ切り替え */
+    .tab-toggle {
+      display: flex;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .tab-toggle button {
+      flex: 1;
+      padding: 8px;
+      border: 2px solid #ccc;
+      border-radius: 8px;
+      background: #fff;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tab-toggle button.active {
+      border-color: #4f7cff;
+      color: #4f7cff;
+      font-weight: 700;
+    }
+
+    /* =====================
+       案A: ミニマル＆クリーン
+       ===================== */
+    .a-screen { display: none; }
+    .a-screen.active { display: block; }
+
+    .a-header {
+      background: #fff;
+      padding: 16px 20px 12px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .a-date { font-size: 0.8rem; color: #888; }
+    .a-title { font-size: 1.1rem; font-weight: 700; color: #1a1a2e; }
+
+    .a-body { padding: 16px; background: #f8f9fc; min-height: 560px; }
+
+    .a-photo-area {
+      background: #e8eaf2;
+      border-radius: 20px;
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      font-size: 3.5rem;
+    }
+
+    .a-weight-row {
+      display: flex;
+      align-items: center;
+      background: #fff;
+      border-radius: 16px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      gap: 12px;
+    }
+
+    .a-weight-label { font-size: 0.8rem; color: #888; flex: 1; }
+    .a-weight-val { font-size: 1.8rem; font-weight: 700; color: #4f7cff; }
+    .a-weight-unit { font-size: 0.85rem; color: #888; }
+
+    .a-comment-card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    .a-comment-tabs { display: flex; gap: 0; margin-bottom: 10px; }
+
+    .a-comment-tab {
+      flex: 1;
+      padding: 6px;
+      text-align: center;
+      font-size: 0.8rem;
+      border-radius: 8px;
+      color: #888;
+    }
+
+    .a-comment-tab.active {
+      background: #f0f3ff;
+      color: #4f7cff;
+      font-weight: 700;
+    }
+
+    .a-comment-box {
+      background: #f8f9fc;
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 0.85rem;
+      color: #555;
+      min-height: 60px;
+      line-height: 1.6;
+    }
+
+    .a-save-btn {
+      width: 100%;
+      background: #4f7cff;
+      color: #fff;
+      border: none;
+      border-radius: 14px;
+      padding: 16px;
+      font-size: 1rem;
+      font-weight: 700;
+      margin-top: 4px;
+    }
+
+    .a-bottom-nav {
+      display: flex;
+      background: #fff;
+      border-top: 1px solid #eee;
+      padding: 10px 0 20px;
+    }
+
+    .a-nav-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.65rem;
+      color: #bbb;
+    }
+
+    .a-nav-item.active { color: #4f7cff; }
+    .a-nav-icon { font-size: 1.4rem; }
+
+    /* 履歴画面A */
+    .a-list { padding: 16px; background: #f8f9fc; min-height: 560px; }
+    .a-list-item {
+      display: flex;
+      gap: 12px;
+      background: #fff;
+      border-radius: 16px;
+      padding: 12px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      align-items: center;
+    }
+    .a-list-thumb {
+      width: 60px; height: 60px;
+      border-radius: 12px;
+      background: #e8eaf2;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.8rem; flex-shrink: 0;
+    }
+    .a-list-info { flex: 1; }
+    .a-list-date { font-size: 0.75rem; color: #aaa; margin-bottom: 2px; }
+    .a-list-weight { font-size: 1.3rem; font-weight: 700; color: #4f7cff; }
+    .a-list-memo { font-size: 0.75rem; color: #aaa; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .a-list-arrow { color: #ccc; font-size: 1rem; }
+
+    /* =====================
+       案B: ウォーム日記風
+       ===================== */
+    .b-screen { display: none; }
+    .b-screen.active { display: block; }
+
+    .b-header {
+      background: linear-gradient(135deg, #ff7043, #ff8a65);
+      padding: 20px 20px 28px;
+      color: #fff;
+    }
+
+    .b-header-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+    .b-app-name { font-size: 0.8rem; opacity: 0.8; letter-spacing: 0.1em; }
+    .b-date-big { font-size: 1.6rem; font-weight: 700; }
+    .b-date-sub { font-size: 0.8rem; opacity: 0.8; }
+
+    .b-body { background: #fff9f5; min-height: 560px; margin-top: -12px; border-radius: 20px 20px 0 0; padding: 20px 16px; }
+
+    .b-section-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #ff7043;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      margin-top: 16px;
+    }
+
+    .b-photo-row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      background: #fff;
+      border-radius: 16px;
+      padding: 14px;
+      box-shadow: 0 2px 12px rgba(255,112,67,0.1);
+      margin-bottom: 4px;
+    }
+
+    .b-photo-thumb {
+      width: 72px; height: 72px;
+      border-radius: 14px;
+      background: #ffe0d0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2.2rem;
+      flex-shrink: 0;
+    }
+
+    .b-photo-info { flex: 1; }
+    .b-photo-label { font-size: 0.8rem; color: #aaa; margin-bottom: 4px; }
+    .b-camera-btn {
+      background: #ff7043;
+      color: #fff;
+      border: none;
+      border-radius: 20px;
+      padding: 8px 16px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .b-weight-box {
+      background: #fff;
+      border-radius: 16px;
+      padding: 14px 16px;
+      box-shadow: 0 2px 12px rgba(255,112,67,0.1);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .b-weight-num { font-size: 2.4rem; font-weight: 700; color: #ff7043; }
+    .b-weight-unit { font-size: 0.9rem; color: #aaa; }
+    .b-weight-adj { display: flex; flex-direction: column; gap: 4px; margin-left: auto; }
+    .b-weight-adj button {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      border: 2px solid #ff7043;
+      background: #fff;
+      color: #ff7043;
+      font-weight: 700;
+      font-size: 1rem;
+    }
+
+    .b-comment-morning, .b-comment-evening {
+      background: #fff;
+      border-radius: 16px;
+      padding: 14px 16px;
+      box-shadow: 0 2px 12px rgba(255,112,67,0.1);
+      margin-bottom: 10px;
+    }
+
+    .b-comment-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .b-comment-icon { font-size: 1.2rem; }
+    .b-comment-title { font-size: 0.85rem; font-weight: 700; color: #555; }
+    .b-comment-time { font-size: 0.75rem; color: #aaa; margin-left: auto; }
+    .b-comment-text { font-size: 0.85rem; color: #777; line-height: 1.6; }
+
+    .b-save-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #ff7043, #ff8a65);
+      color: #fff;
+      border: none;
+      border-radius: 14px;
+      padding: 16px;
+      font-size: 1rem;
+      font-weight: 700;
+      margin-top: 8px;
+    }
+
+    .b-bottom-nav {
+      display: flex;
+      background: #fff;
+      border-top: 1px solid #ffe0d0;
+      padding: 10px 0 20px;
+    }
+
+    .b-nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 0.65rem; color: #ccc; }
+    .b-nav-item.active { color: #ff7043; }
+    .b-nav-icon { font-size: 1.4rem; }
+
+    /* 履歴B */
+    .b-list { padding: 16px; background: #fff9f5; min-height: 560px; }
+    .b-list-item {
+      display: flex; gap: 0;
+      margin-bottom: 16px;
+    }
+    .b-list-date-col {
+      display: flex; flex-direction: column; align-items: center;
+      width: 48px; flex-shrink: 0; padding-top: 4px;
+    }
+    .b-list-day { font-size: 1.2rem; font-weight: 700; color: #ff7043; }
+    .b-list-mon { font-size: 0.7rem; color: #aaa; }
+    .b-list-line { width: 2px; background: #ffe0d0; flex: 1; margin-top: 6px; }
+    .b-list-card {
+      flex: 1;
+      background: #fff;
+      border-radius: 16px;
+      padding: 12px;
+      box-shadow: 0 2px 12px rgba(255,112,67,0.1);
+      display: flex; gap: 10px; align-items: center; margin-left: 10px;
+    }
+    .b-list-thumb {
+      width: 56px; height: 56px; border-radius: 12px;
+      background: #ffe0d0; display: flex; align-items: center; justify-content: center;
+      font-size: 1.8rem; flex-shrink: 0;
+    }
+    .b-list-info { flex: 1; }
+    .b-list-weight { font-size: 1.3rem; font-weight: 700; color: #ff7043; }
+    .b-list-memo { font-size: 0.75rem; color: #aaa; }
+
+    /* =====================
+       案C: ダーク＆モダン
+       ===================== */
+    .c-screen { display: none; }
+    .c-screen.active { display: block; }
+
+    .c-header {
+      background: #0f0f1a;
+      padding: 20px 20px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .c-greeting { }
+    .c-greeting-sub { font-size: 0.75rem; color: #666; margin-bottom: 2px; }
+    .c-greeting-main { font-size: 1.1rem; font-weight: 700; color: #fff; }
+    .c-streak { background: #1e1e2e; border-radius: 20px; padding: 6px 12px; }
+    .c-streak-inner { font-size: 0.75rem; color: #a78bfa; font-weight: 600; }
+
+    .c-body { background: #0f0f1a; min-height: 600px; padding: 16px; }
+
+    .c-photo-section {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .c-photo-box {
+      flex: 1;
+      aspect-ratio: 1;
+      background: #1e1e2e;
+      border-radius: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: 2px dashed #333;
+    }
+
+    .c-photo-icon { font-size: 2.5rem; }
+    .c-photo-label { font-size: 0.7rem; color: #666; }
+
+    .c-metrics {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .c-metric-card {
+      background: #1e1e2e;
+      border-radius: 16px;
+      padding: 14px;
+    }
+
+    .c-metric-label { font-size: 0.7rem; color: #666; margin-bottom: 6px; }
+    .c-metric-val { font-size: 1.8rem; font-weight: 700; }
+    .c-metric-unit { font-size: 0.8rem; color: #666; }
+
+    .c-metric-card.weight .c-metric-val { color: #a78bfa; }
+    .c-metric-card.streak .c-metric-val { color: #34d399; }
+
+    .c-comment-section {
+      background: #1e1e2e;
+      border-radius: 16px;
+      padding: 14px;
+      margin-bottom: 16px;
+    }
+
+    .c-comment-title { font-size: 0.75rem; color: #666; margin-bottom: 12px; }
+
+    .c-comment-row {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      margin-bottom: 10px;
+    }
+
+    .c-comment-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      margin-top: 6px;
+      flex-shrink: 0;
+    }
+
+    .c-comment-dot.morning { background: #fbbf24; }
+    .c-comment-dot.evening { background: #a78bfa; }
+
+    .c-comment-inner { flex: 1; }
+    .c-comment-time-label { font-size: 0.7rem; color: #666; margin-bottom: 4px; }
+    .c-comment-text-field {
+      background: #0f0f1a;
+      border-radius: 10px;
+      padding: 8px 10px;
+      font-size: 0.82rem;
+      color: #ccc;
+      min-height: 42px;
+    }
+
+    .c-save-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #a78bfa, #7c3aed);
+      color: #fff;
+      border: none;
+      border-radius: 14px;
+      padding: 16px;
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    .c-bottom-nav {
+      display: flex;
+      background: #1e1e2e;
+      border-top: 1px solid #333;
+      padding: 10px 0 20px;
+    }
+
+    .c-nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 0.65rem; color: #444; }
+    .c-nav-item.active { color: #a78bfa; }
+    .c-nav-icon { font-size: 1.4rem; }
+
+    /* 履歴C */
+    .c-list { padding: 16px; background: #0f0f1a; min-height: 600px; }
+
+    .c-list-header {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      overflow-x: auto;
+    }
+
+    .c-month-chip {
+      background: #1e1e2e;
+      color: #666;
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 0.8rem;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .c-month-chip.active { background: #a78bfa; color: #fff; font-weight: 700; }
+
+    .c-list-item {
+      display: flex;
+      gap: 12px;
+      background: #1e1e2e;
+      border-radius: 16px;
+      padding: 12px;
+      margin-bottom: 12px;
+      align-items: center;
+    }
+
+    .c-list-thumb {
+      width: 56px; height: 56px; border-radius: 12px;
+      background: #2a2a3e;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.8rem; flex-shrink: 0;
+    }
+
+    .c-list-info { flex: 1; }
+    .c-list-date { font-size: 0.75rem; color: #666; margin-bottom: 2px; }
+    .c-list-weight { font-size: 1.3rem; font-weight: 700; color: #a78bfa; }
+    .c-list-diff { font-size: 0.75rem; color: #34d399; }
+    .c-list-memo { font-size: 0.75rem; color: #555; margin-top: 2px; }
+
+    .c-list-arrow { color: #444; font-size: 1rem; }
+  </style>
+</head>
+<body>
+  <h1>毎朝日記 — UI案 比較</h1>
+  <p class="subtitle">各案の「記録」「履歴」タブを切り替えて確認できます</p>
+
+  <div class="cols">
+
+    <!-- ===== 案A ===== -->
+    <div class="col">
+      <div class="col-label">案A｜ミニマル＆クリーン</div>
+      <div class="col-desc">白基調・シンプルな構成<br>迷わず使えるスタンダードデザイン</div>
+      <div class="tab-toggle" id="toggle-a">
+        <button class="active" onclick="switchTab('a','record')">記録</button>
+        <button onclick="switchTab('a','history')">履歴</button>
+      </div>
+      <div class="phone">
+        <div class="phone-screen">
+          <!-- 記録 -->
+          <div id="a-record" class="a-screen active">
+            <div class="a-header">
+              <span class="a-date">2026年4月14日（火）</span>
+              <span class="a-title">毎朝日記</span>
+            </div>
+            <div class="a-body">
+              <div class="a-photo-area">🤳</div>
+              <div class="a-weight-row">
+                <span class="a-weight-label">体重</span>
+                <span class="a-weight-val">65.3</span>
+                <span class="a-weight-unit">kg</span>
+              </div>
+              <div class="a-comment-card">
+                <div class="a-comment-tabs">
+                  <div class="a-comment-tab active">🌅 朝のコメント</div>
+                  <div class="a-comment-tab">🌙 夜のコメント</div>
+                </div>
+                <div class="a-comment-box">今日もいい天気。体が軽い気がする。</div>
+              </div>
+              <button class="a-save-btn">保存する</button>
+            </div>
+            <div class="a-bottom-nav">
+              <div class="a-nav-item active"><span class="a-nav-icon">📝</span>記録</div>
+              <div class="a-nav-item"><span class="a-nav-icon">📋</span>履歴</div>
+            </div>
+          </div>
+          <!-- 履歴 -->
+          <div id="a-history" class="a-screen">
+            <div class="a-header">
+              <span class="a-date">記録一覧</span>
+              <span class="a-title">毎朝日記</span>
+            </div>
+            <div class="a-list">
+              <div class="a-list-item">
+                <div class="a-list-thumb">😊</div>
+                <div class="a-list-info">
+                  <div class="a-list-date">4月14日（火）</div>
+                  <div class="a-list-weight">65.3 kg</div>
+                  <div class="a-list-memo">今日もいい天気。体が軽い気がする。</div>
+                </div>
+                <div class="a-list-arrow">›</div>
+              </div>
+              <div class="a-list-item">
+                <div class="a-list-thumb">😐</div>
+                <div class="a-list-info">
+                  <div class="a-list-date">4月13日（月）</div>
+                  <div class="a-list-weight">65.8 kg</div>
+                  <div class="a-list-memo">昨日食べすぎた…</div>
+                </div>
+                <div class="a-list-arrow">›</div>
+              </div>
+              <div class="a-list-item">
+                <div class="a-list-thumb">😄</div>
+                <div class="a-list-info">
+                  <div class="a-list-date">4月12日（日）</div>
+                  <div class="a-list-weight">65.1 kg</div>
+                  <div class="a-list-memo">週末ランニング達成！</div>
+                </div>
+                <div class="a-list-arrow">›</div>
+              </div>
+            </div>
+            <div class="a-bottom-nav">
+              <div class="a-nav-item"><span class="a-nav-icon">📝</span>記録</div>
+              <div class="a-nav-item active"><span class="a-nav-icon">📋</span>履歴</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 案B ===== -->
+    <div class="col">
+      <div class="col-label">案B｜ウォーム・日記風</div>
+      <div class="col-desc">暖色系・タイムライン履歴<br>日記を書く楽しさを感じるデザイン</div>
+      <div class="tab-toggle" id="toggle-b">
+        <button class="active" onclick="switchTab('b','record')">記録</button>
+        <button onclick="switchTab('b','history')">履歴</button>
+      </div>
+      <div class="phone">
+        <div class="phone-screen">
+          <!-- 記録 -->
+          <div id="b-record" class="b-screen active">
+            <div class="b-header">
+              <div class="b-header-top">
+                <div>
+                  <div class="b-app-name">DAILY JOURNAL</div>
+                  <div class="b-date-big">4月14日</div>
+                  <div class="b-date-sub">2026年 火曜日</div>
+                </div>
+              </div>
+            </div>
+            <div class="b-body">
+              <div class="b-section-title">今日の写真</div>
+              <div class="b-photo-row">
+                <div class="b-photo-thumb">🤳</div>
+                <div class="b-photo-info">
+                  <div class="b-photo-label">今日の顔を撮影しよう</div>
+                  <button class="b-camera-btn">📷 カメラ起動</button>
+                </div>
+              </div>
+
+              <div class="b-section-title">体重</div>
+              <div class="b-weight-box">
+                <span class="b-weight-num">65.3</span>
+                <span class="b-weight-unit">kg</span>
+                <div class="b-weight-adj">
+                  <button>＋</button>
+                  <button>−</button>
+                </div>
+              </div>
+
+              <div class="b-section-title">コメント</div>
+              <div class="b-comment-morning">
+                <div class="b-comment-head">
+                  <span class="b-comment-icon">🌅</span>
+                  <span class="b-comment-title">朝のひとこと</span>
+                  <span class="b-comment-time">07:23</span>
+                </div>
+                <div class="b-comment-text">今日もいい天気。体が軽い気がする。</div>
+              </div>
+              <div class="b-comment-evening">
+                <div class="b-comment-head">
+                  <span class="b-comment-icon">🌙</span>
+                  <span class="b-comment-title">夜のひとこと</span>
+                  <span class="b-comment-time">未記録</span>
+                </div>
+                <div class="b-comment-text" style="color:#ccc">夜に記録しよう…</div>
+              </div>
+
+              <button class="b-save-btn">保存する</button>
+            </div>
+            <div class="b-bottom-nav">
+              <div class="b-nav-item active"><span class="b-nav-icon">📝</span>記録</div>
+              <div class="b-nav-item"><span class="b-nav-icon">📖</span>履歴</div>
+            </div>
+          </div>
+          <!-- 履歴 -->
+          <div id="b-history" class="b-screen">
+            <div class="b-header">
+              <div class="b-header-top">
+                <div>
+                  <div class="b-app-name">DAILY JOURNAL</div>
+                  <div class="b-date-big">記録一覧</div>
+                </div>
+              </div>
+            </div>
+            <div class="b-list">
+              <div class="b-list-item">
+                <div class="b-list-date-col">
+                  <div class="b-list-day">14</div>
+                  <div class="b-list-mon">4月</div>
+                  <div class="b-list-line"></div>
+                </div>
+                <div class="b-list-card">
+                  <div class="b-list-thumb">😊</div>
+                  <div class="b-list-info">
+                    <div class="b-list-weight">65.3 kg</div>
+                    <div class="b-list-memo">今日もいい天気。体が軽い…</div>
+                  </div>
+                </div>
+              </div>
+              <div class="b-list-item">
+                <div class="b-list-date-col">
+                  <div class="b-list-day">13</div>
+                  <div class="b-list-mon">4月</div>
+                  <div class="b-list-line"></div>
+                </div>
+                <div class="b-list-card">
+                  <div class="b-list-thumb">😐</div>
+                  <div class="b-list-info">
+                    <div class="b-list-weight">65.8 kg</div>
+                    <div class="b-list-memo">昨日食べすぎた…</div>
+                  </div>
+                </div>
+              </div>
+              <div class="b-list-item">
+                <div class="b-list-date-col">
+                  <div class="b-list-day">12</div>
+                  <div class="b-list-mon">4月</div>
+                  <div class="b-list-line"></div>
+                </div>
+                <div class="b-list-card">
+                  <div class="b-list-thumb">😄</div>
+                  <div class="b-list-info">
+                    <div class="b-list-weight">65.1 kg</div>
+                    <div class="b-list-memo">週末ランニング達成！</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="b-bottom-nav">
+              <div class="b-nav-item"><span class="b-nav-icon">📝</span>記録</div>
+              <div class="b-nav-item active"><span class="b-nav-icon">📖</span>履歴</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 案C ===== -->
+    <div class="col">
+      <div class="col-label">案C｜ダーク＆モダン</div>
+      <div class="col-desc">ダークテーマ・データ重視<br>継続記録をゲーム感覚で楽しむデザイン</div>
+      <div class="tab-toggle" id="toggle-c">
+        <button class="active" onclick="switchTab('c','record')">記録</button>
+        <button onclick="switchTab('c','history')">履歴</button>
+      </div>
+      <div class="phone">
+        <div class="phone-screen">
+          <!-- 記録 -->
+          <div id="c-record" class="c-screen active">
+            <div class="c-header">
+              <div class="c-greeting">
+                <div class="c-greeting-sub">おはようございます</div>
+                <div class="c-greeting-main">4月14日（火）</div>
+              </div>
+              <div class="c-streak">
+                <div class="c-streak-inner">🔥 3日連続</div>
+              </div>
+            </div>
+            <div class="c-body">
+              <div class="c-photo-section">
+                <div class="c-photo-box" style="flex:1">
+                  <div class="c-photo-icon">🤳</div>
+                  <div class="c-photo-label">今日の写真</div>
+                </div>
+              </div>
+              <div class="c-metrics">
+                <div class="c-metric-card weight">
+                  <div class="c-metric-label">体重</div>
+                  <div>
+                    <span class="c-metric-val">65.3</span>
+                    <span class="c-metric-unit">kg</span>
+                  </div>
+                </div>
+                <div class="c-metric-card streak">
+                  <div class="c-metric-label">先週比</div>
+                  <div>
+                    <span class="c-metric-val">−0.5</span>
+                    <span class="c-metric-unit">kg</span>
+                  </div>
+                </div>
+              </div>
+              <div class="c-comment-section">
+                <div class="c-comment-title">TODAY'S NOTES</div>
+                <div class="c-comment-row">
+                  <div class="c-comment-dot morning"></div>
+                  <div class="c-comment-inner">
+                    <div class="c-comment-time-label">🌅 朝</div>
+                    <div class="c-comment-text-field">今日もいい天気。体が軽い気がする。</div>
+                  </div>
+                </div>
+                <div class="c-comment-row">
+                  <div class="c-comment-dot evening"></div>
+                  <div class="c-comment-inner">
+                    <div class="c-comment-time-label">🌙 夜</div>
+                    <div class="c-comment-text-field" style="color:#444">夜に記録しよう…</div>
+                  </div>
+                </div>
+              </div>
+              <button class="c-save-btn">保存する</button>
+            </div>
+            <div class="c-bottom-nav">
+              <div class="c-nav-item active"><span class="c-nav-icon">📝</span>記録</div>
+              <div class="c-nav-item"><span class="c-nav-icon">📊</span>履歴</div>
+            </div>
+          </div>
+          <!-- 履歴 -->
+          <div id="c-history" class="c-screen">
+            <div class="c-header">
+              <div class="c-greeting">
+                <div class="c-greeting-sub">記録一覧</div>
+                <div class="c-greeting-main">HISTORY</div>
+              </div>
+            </div>
+            <div class="c-list">
+              <div class="c-list-header">
+                <div class="c-month-chip active">4月</div>
+                <div class="c-month-chip">3月</div>
+                <div class="c-month-chip">2月</div>
+              </div>
+              <div class="c-list-item">
+                <div class="c-list-thumb">😊</div>
+                <div class="c-list-info">
+                  <div class="c-list-date">4月14日（火）</div>
+                  <div class="c-list-weight">65.3 kg <span class="c-list-diff">▼0.5</span></div>
+                  <div class="c-list-memo">今日もいい天気。体が軽い…</div>
+                </div>
+                <div class="c-list-arrow">›</div>
+              </div>
+              <div class="c-list-item">
+                <div class="c-list-thumb">😐</div>
+                <div class="c-list-info">
+                  <div class="c-list-date">4月13日（月）</div>
+                  <div class="c-list-weight">65.8 kg <span style="color:#f87171;font-size:0.75rem">▲0.7</span></div>
+                  <div class="c-list-memo">昨日食べすぎた…</div>
+                </div>
+                <div class="c-list-arrow">›</div>
+              </div>
+              <div class="c-list-item">
+                <div class="c-list-thumb">😄</div>
+                <div class="c-list-info">
+                  <div class="c-list-date">4月12日（日）</div>
+                  <div class="c-list-weight">65.1 kg <span class="c-list-diff">▼0.2</span></div>
+                  <div class="c-list-memo">週末ランニング達成！</div>
+                </div>
+                <div class="c-list-arrow">›</div>
+              </div>
+            </div>
+            <div class="c-bottom-nav">
+              <div class="c-nav-item"><span class="c-nav-icon">📝</span>記録</div>
+              <div class="c-nav-item active"><span class="c-nav-icon">📊</span>履歴</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /cols -->
+
+  <script>
+    function switchTab(plan, tab) {
+      // 画面切り替え
+      document.querySelectorAll(`.${plan}-screen`).forEach(s => s.classList.remove('active'));
+      document.getElementById(`${plan}-${tab}`).classList.add('active');
+      // ボタン切り替え
+      const btns = document.querySelectorAll(`#toggle-${plan} button`);
+      btns.forEach(b => b.classList.remove('active'));
+      btns[tab === 'record' ? 0 : 1].classList.add('active');
+    }
+  </script>
+</body>
+</html>
