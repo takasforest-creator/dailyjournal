@@ -3,81 +3,122 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <meta name="theme-color" content="#4f7cff" />
+  <meta name="theme-color" content="#ff7043" />
   <title>毎朝日記</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header>
-    <h1>毎朝日記</h1>
-    <span id="today-date"></span>
-  </header>
 
-  <nav class="tab-nav">
-    <button class="tab-btn active" data-tab="record">記録する</button>
-    <button class="tab-btn" data-tab="history">履歴</button>
-  </nav>
-
-  <!-- 記録タブ -->
-  <section id="tab-record" class="tab-content active">
-    <div class="camera-area">
-      <div id="camera-placeholder" class="camera-placeholder">
-        <span>🤳</span>
-        <p>「カメラを起動」を押して撮影</p>
-      </div>
-      <video id="camera-video" autoplay playsinline hidden></video>
-      <canvas id="camera-canvas" hidden></canvas>
-      <img id="photo-preview" alt="撮影した写真" hidden />
-      <div class="camera-controls">
-        <button id="btn-start-camera" class="btn-primary">カメラを起動</button>
-        <button id="btn-capture" class="btn-capture" hidden>📷 撮影</button>
-        <button id="btn-retake" class="btn-secondary" hidden>撮り直す</button>
-      </div>
+  <!-- 記録画面 -->
+  <div id="screen-record" class="screen active">
+    <div class="header">
+      <div class="header-sub" id="header-date"></div>
+      <div class="header-title">DAILY JOURNAL</div>
     </div>
 
-    <div class="form-area">
-      <label class="input-label" for="weight-input">
-        体重 (kg)
-      </label>
-      <div class="weight-row">
+    <div class="body-scroll">
+      <!-- 写真 -->
+      <div class="section-label">今日の写真</div>
+      <div class="photo-card">
+        <div id="camera-placeholder" class="photo-placeholder">
+          <span>🤳</span>
+          <p>カメラを起動して撮影しよう</p>
+        </div>
+        <video id="camera-video" autoplay playsinline hidden></video>
+        <canvas id="camera-canvas" hidden></canvas>
+        <img id="photo-preview" alt="撮影した写真" hidden />
+        <div class="camera-controls">
+          <button id="btn-start-camera" class="btn-primary">📷 カメラを起動</button>
+          <button id="btn-capture" class="btn-capture" hidden>シャッター</button>
+          <button id="btn-retake" class="btn-secondary" hidden>撮り直す</button>
+        </div>
+      </div>
+
+      <!-- 体重 -->
+      <div class="section-label">体重</div>
+      <div class="weight-card">
         <button class="weight-adj" data-delta="-0.1">−</button>
-        <input
-          id="weight-input"
-          type="number"
-          step="0.1"
-          min="0"
-          max="300"
-          placeholder="例: 65.5"
-        />
+        <div class="weight-display">
+          <input id="weight-input" type="number" step="0.1" min="0" max="300" placeholder="–" />
+          <span class="weight-unit">kg</span>
+        </div>
         <button class="weight-adj" data-delta="+0.1">＋</button>
       </div>
 
-      <label class="input-label" for="memo-input">メモ（任意）</label>
-      <textarea id="memo-input" rows="3" placeholder="今日の一言…"></textarea>
+      <!-- コメント -->
+      <div class="section-label">コメント</div>
+      <div class="comment-card">
+        <div class="comment-row">
+          <div class="comment-icon">🌅</div>
+          <div class="comment-inner">
+            <div class="comment-label">朝のひとこと</div>
+            <textarea id="morning-input" rows="2" placeholder="今朝の気分は…"></textarea>
+          </div>
+        </div>
+        <div class="comment-divider"></div>
+        <div class="comment-row">
+          <div class="comment-icon">🌙</div>
+          <div class="comment-inner">
+            <div class="comment-label">夜のひとこと</div>
+            <textarea id="evening-input" rows="2" placeholder="今日一日どうだった…"></textarea>
+          </div>
+        </div>
+      </div>
 
       <button id="btn-save" class="btn-save">保存する</button>
     </div>
 
-    <div id="save-toast" class="toast" hidden>保存しました！</div>
-  </section>
+    <div id="save-toast" class="toast" hidden></div>
+  </div>
 
-  <!-- 履歴タブ -->
-  <section id="tab-history" class="tab-content">
-    <div id="history-empty" class="empty-state">
-      <p>まだ記録がありません。<br />毎朝の記録を始めましょう！</p>
+  <!-- 履歴画面 -->
+  <div id="screen-history" class="screen">
+    <div class="header">
+      <div class="header-sub">これまでの記録</div>
+      <div class="header-title">HISTORY</div>
     </div>
-    <ul id="history-list" class="history-list"></ul>
-  </section>
 
-  <!-- エントリ詳細モーダル -->
+    <div class="body-scroll">
+      <div id="month-filter" class="month-filter"></div>
+
+      <div id="history-empty" class="empty-state" hidden>
+        <p>まだ記録がありません。<br />毎朝の記録を始めましょう！</p>
+      </div>
+      <ul id="history-list" class="history-list"></ul>
+    </div>
+  </div>
+
+  <!-- ボトムナビ -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" data-screen="record">
+      <span class="nav-icon">📝</span>
+      <span class="nav-label">記録</span>
+    </button>
+    <button class="nav-item" data-screen="history">
+      <span class="nav-icon">📖</span>
+      <span class="nav-label">履歴</span>
+    </button>
+  </nav>
+
+  <!-- 詳細モーダル -->
   <div id="detail-modal" class="modal" hidden>
     <div class="modal-backdrop"></div>
     <div class="modal-card">
       <button class="modal-close">✕</button>
       <p id="modal-date" class="modal-date"></p>
-      <img id="modal-photo" alt="写真" hidden />
+      <img id="modal-photo" hidden />
+      <div class="modal-no-photo" id="modal-no-photo" hidden>📷 写真なし</div>
       <p id="modal-weight" class="modal-weight"></p>
-      <p id="modal-memo" class="modal-memo"></p>
+      <div class="modal-comments">
+        <div class="modal-comment" id="modal-morning" hidden>
+          <span class="modal-comment-icon">🌅</span>
+          <span id="modal-morning-text"></span>
+        </div>
+        <div class="modal-comment" id="modal-evening" hidden>
+          <span class="modal-comment-icon">🌙</span>
+          <span id="modal-evening-text"></span>
+        </div>
+      </div>
       <button id="modal-delete" class="btn-delete">削除</button>
     </div>
   </div>
