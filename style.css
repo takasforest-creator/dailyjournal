@@ -223,6 +223,52 @@ html, body {
 .comment-divider { height: 1px; background: var(--border); margin: 0 16px; }
 
 /* =============================
+   時間カード
+   ============================= */
+.time-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+.time-row {
+  display: flex;
+  gap: 12px;
+  padding: 14px 16px;
+  align-items: center;
+}
+
+.time-icon { font-size: 1.4rem; flex-shrink: 0; }
+
+.time-inner { flex: 1; }
+
+.time-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.time-inner input[type="time"] {
+  width: 100%;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 9px 11px;
+  font-size: 1rem;
+  font-family: inherit;
+  color: var(--text);
+  background: var(--bg);
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.time-inner input[type="time"]:focus { border-color: var(--primary); }
+
+.time-divider { height: 1px; background: var(--border); margin: 0 16px; }
+
+/* =============================
    ボタン
    ============================= */
 .btn-primary, .btn-secondary, .btn-capture {
@@ -253,6 +299,20 @@ html, body {
   cursor: pointer;
   box-shadow: 0 4px 16px rgba(255,112,67,0.3);
   transition: opacity 0.15s, transform 0.1s;
+}
+
+.btn-edit {
+  display: block;
+  width: 100%;
+  background: var(--primary-pale);
+  color: var(--primary);
+  border: 2px solid var(--primary);
+  border-radius: var(--radius);
+  padding: 13px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 12px;
 }
 
 .btn-delete {

@@ -4,6 +4,7 @@ const STORAGE_KEY = 'dailyjournal_entries';
 let stream = null;
 let capturedDataUrl = null;
 let currentMonth = null;
+let editingEntry = null;
 
 /* ── ユーティリティ ── */
 const WEEKDAYS = ['日','月','火','水','木','金','土'];
@@ -67,6 +68,11 @@ function initNav() {
       document.getElementById('screen-' + target).classList.add('active');
       btn.classList.add('active');
       if (target === 'history') renderHistory();
+      if (target === 'record' && editingEntry) {
+        // 編集中にナビで記録画面に戻った場合はキャンセル
+        editingEntry = null;
+        resetForm();
+      }
     });
   });
 }
@@ -133,6 +139,30 @@ function stopStream() {
   if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
 }
 
+/* ── フォームリセット ── */
+function resetForm() {
+  stopStream();
+  capturedDataUrl = null;
+
+  document.getElementById('weight-input').value  = '';
+  document.getElementById('morning-input').value = '';
+  document.getElementById('evening-input').value = '';
+  document.getElementById('wake-input').value    = '';
+  document.getElementById('sleep-input').value   = '';
+
+  const preview     = document.getElementById('photo-preview');
+  const placeholder = document.getElementById('camera-placeholder');
+  preview.hidden          = true;
+  preview.src             = '';
+  placeholder.hidden      = false;
+  document.getElementById('btn-start-camera').hidden = false;
+  document.getElementById('btn-capture').hidden      = true;
+  document.getElementById('btn-retake').hidden       = true;
+  document.getElementById('camera-video').hidden     = true;
+
+  initHeader();
+}
+
 /* ── 体重 ＋/− ── */
 function initWeightControls() {
   document.querySelectorAll('.weight-adj').forEach(btn => {
@@ -148,40 +178,86 @@ function initWeightControls() {
 /* ── 保存 ── */
 function initSave() {
   document.getElementById('btn-save').addEventListener('click', () => {
-    const weight  = parseFloat(document.getElementById('weight-input').value);
-    const morning = document.getElementById('morning-input').value.trim();
-    const evening = document.getElementById('evening-input').value.trim();
+    const weight    = parseFloat(document.getElementById('weight-input').value);
+    const morning   = document.getElementById('morning-input').value.trim();
+    const evening   = document.getElementById('evening-input').value.trim();
+    const wakeTime  = document.getElementById('wake-input').value  || null;
+    const sleepTime = document.getElementById('sleep-input').value || null;
 
     if (!capturedDataUrl && !confirm('写真が撮影されていません。このまま保存しますか？')) return;
     if (isNaN(weight) && !confirm('体重が入力されていません。このまま保存しますか？')) return;
 
     const entries = loadEntries();
-    const key = todayKey();
+    const key = editingEntry ? editingEntry.date : todayKey();
     const idx = entries.findIndex(e => e.date === key);
 
     const entry = {
-      date:    key,
-      ts:      new Date().toISOString(),
-      weight:  isNaN(weight) ? null : weight,
-      morning: morning,
-      evening: evening,
-      photo:   capturedDataUrl || null,
+      date:      key,
+      ts:        new Date().toISOString(),
+      weight:    isNaN(weight) ? null : weight,
+      morning,
+      evening,
+      photo:     capturedDataUrl || null,
+      wakeTime,
+      sleepTime,
     };
 
     if (idx !== -1) {
-      if (!confirm('今日の記録がすでにあります。上書きしますか？')) return;
+      // 編集中は確認なしで上書き、新規で既存あり場合は確認
+      if (!editingEntry && !confirm('今日の記録がすでにあります。上書きしますか？')) return;
       entries[idx] = entry;
     } else {
       entries.unshift(entry);
     }
 
     saveEntries(entries);
-    showToast('保存しました！');
-
-    document.getElementById('weight-input').value = '';
-    document.getElementById('morning-input').value = '';
-    document.getElementById('evening-input').value = '';
+    showToast(editingEntry ? '更新しました！' : '保存しました！');
+    editingEntry = null;
+    resetForm();
   });
+}
+
+/* ── 編集開始 ── */
+function startEdit(entry) {
+  editingEntry = entry;
+
+  // 記録画面に切り替え
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('screen-record').classList.add('active');
+  document.querySelector('.nav-item[data-screen="record"]').classList.add('active');
+
+  // フォームに値をセット
+  document.getElementById('weight-input').value  = entry.weight != null ? entry.weight.toFixed(1) : '';
+  document.getElementById('morning-input').value = entry.morning   || '';
+  document.getElementById('evening-input').value = entry.evening   || '';
+  document.getElementById('wake-input').value    = entry.wakeTime  || '';
+  document.getElementById('sleep-input').value   = entry.sleepTime || '';
+
+  // 写真プレビュー
+  stopStream();
+  capturedDataUrl = entry.photo || null;
+  const preview     = document.getElementById('photo-preview');
+  const placeholder = document.getElementById('camera-placeholder');
+  if (entry.photo) {
+    preview.src = entry.photo;
+    preview.hidden      = false;
+    placeholder.hidden  = true;
+    document.getElementById('btn-start-camera').hidden = true;
+    document.getElementById('btn-capture').hidden      = true;
+    document.getElementById('btn-retake').hidden       = false;
+  } else {
+    preview.hidden      = true;
+    preview.src         = '';
+    placeholder.hidden  = false;
+    document.getElementById('btn-start-camera').hidden = false;
+    document.getElementById('btn-capture').hidden      = true;
+    document.getElementById('btn-retake').hidden       = true;
+  }
+
+  // ヘッダーに編集中の日付を表示
+  document.getElementById('header-date').textContent =
+    formatDateFull(entry.date) + '（編集中）';
 }
 
 /* ── 履歴レンダリング ── */
@@ -261,6 +337,13 @@ function initModal() {
   modal.querySelector('.modal-backdrop').addEventListener('click', close);
   modal.querySelector('.modal-close').addEventListener('click', close);
 
+  document.getElementById('modal-edit').addEventListener('click', () => {
+    const entry = loadEntries().find(e => e.date === modal.dataset.entryDate);
+    if (!entry) return;
+    close();
+    startEdit(entry);
+  });
+
   document.getElementById('modal-delete').addEventListener('click', () => {
     if (!confirm('この記録を削除しますか？')) return;
     saveEntries(loadEntries().filter(e => e.date !== modal.dataset.entryDate));
@@ -289,16 +372,29 @@ function openDetail(entry) {
   document.getElementById('modal-weight').textContent =
     entry.weight != null ? `${entry.weight.toFixed(1)} kg` : '体重未記録';
 
+  const wakeEl  = document.getElementById('modal-wake');
+  const sleepEl = document.getElementById('modal-sleep');
+  if (entry.wakeTime) {
+    document.getElementById('modal-wake-text').textContent = `起床 ${entry.wakeTime}`;
+    wakeEl.hidden = false;
+  } else {
+    wakeEl.hidden = true;
+  }
+  if (entry.sleepTime) {
+    document.getElementById('modal-sleep-text').textContent = `就寝 ${entry.sleepTime}`;
+    sleepEl.hidden = false;
+  } else {
+    sleepEl.hidden = true;
+  }
+
   const morningEl = document.getElementById('modal-morning');
   const eveningEl = document.getElementById('modal-evening');
-
   if (entry.morning) {
     document.getElementById('modal-morning-text').textContent = entry.morning;
     morningEl.hidden = false;
   } else {
     morningEl.hidden = true;
   }
-
   if (entry.evening) {
     document.getElementById('modal-evening-text').textContent = entry.evening;
     eveningEl.hidden = false;

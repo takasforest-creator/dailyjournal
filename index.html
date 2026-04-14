@@ -50,6 +50,26 @@
         <button class="weight-adj" data-delta="+0.1">＋</button>
       </div>
 
+      <!-- 時間 -->
+      <div class="section-label">時間</div>
+      <div class="time-card">
+        <div class="time-row">
+          <div class="time-icon">⏰</div>
+          <div class="time-inner">
+            <div class="time-label">起床時間</div>
+            <input id="wake-input" type="time" />
+          </div>
+        </div>
+        <div class="time-divider"></div>
+        <div class="time-row">
+          <div class="time-icon">🛏</div>
+          <div class="time-inner">
+            <div class="time-label">就寝時間</div>
+            <input id="sleep-input" type="time" />
+          </div>
+        </div>
+      </div>
+
       <!-- コメント -->
       <div class="section-label">コメント</div>
       <div class="comment-card">
@@ -115,6 +135,14 @@
       <div class="modal-no-photo" id="modal-no-photo" hidden>📷 写真なし</div>
       <p id="modal-weight" class="modal-weight"></p>
       <div class="modal-comments">
+        <div class="modal-comment" id="modal-wake" hidden>
+          <span class="modal-comment-icon">⏰</span>
+          <span id="modal-wake-text"></span>
+        </div>
+        <div class="modal-comment" id="modal-sleep" hidden>
+          <span class="modal-comment-icon">🛏</span>
+          <span id="modal-sleep-text"></span>
+        </div>
         <div class="modal-comment" id="modal-morning" hidden>
           <span class="modal-comment-icon">🌅</span>
           <span id="modal-morning-text"></span>
@@ -124,6 +152,7 @@
           <span id="modal-evening-text"></span>
         </div>
       </div>
+      <button id="modal-edit" class="btn-edit">編集する</button>
       <button id="modal-delete" class="btn-delete">削除</button>
     </div>
   </div>
