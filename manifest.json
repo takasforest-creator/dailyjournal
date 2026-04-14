@@ -1,0 +1,22 @@
+{
+  "name": "毎朝日記",
+  "short_name": "毎朝日記",
+  "description": "毎日の顔写真と体重を記録する日記アプリ",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#ff7043",
+  "background_color": "#fff9f5",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
