@@ -186,24 +186,56 @@ html, body {
   margin-bottom: 4px;
 }
 
-.comment-row {
-  display: flex;
-  gap: 12px;
-  padding: 16px;
-  align-items: flex-start;
-}
-
-.comment-icon { font-size: 1.4rem; flex-shrink: 0; margin-top: 2px; }
-.comment-inner { flex: 1; }
+.comment-icon { font-size: 1.3rem; flex-shrink: 0; }
 
 .comment-label {
   font-size: 0.78rem;
   font-weight: 700;
   color: var(--muted);
-  margin-bottom: 6px;
 }
 
-.comment-inner textarea {
+.entry-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px 8px;
+}
+
+.entry-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.entry-time {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.entry-time-icon { font-size: 1rem; }
+
+.time-inline {
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  padding: 5px 7px;
+  font-size: 0.82rem;
+  font-family: inherit;
+  color: var(--text);
+  background: var(--bg);
+  outline: none;
+  transition: border-color 0.2s;
+  width: 106px;
+}
+
+.time-inline:focus { border-color: var(--primary); }
+
+.comment-body {
+  padding: 0 16px 14px;
+}
+
+.comment-body textarea {
   width: 100%;
   border: 1.5px solid var(--border);
   border-radius: 10px;
@@ -218,60 +250,9 @@ html, body {
   line-height: 1.5;
 }
 
-.comment-inner textarea:focus { border-color: var(--primary); }
+.comment-body textarea:focus { border-color: var(--primary); }
 
 .comment-divider { height: 1px; background: var(--border); margin: 0 16px; }
-
-/* =============================
-   時間カード（左右並び）
-   ============================= */
-.time-card {
-  background: var(--card);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  overflow: hidden;
-  margin-bottom: 4px;
-}
-
-.time-cols {
-  display: flex;
-  align-items: stretch;
-}
-
-.time-col {
-  flex: 1;
-  padding: 10px 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.time-col-divider {
-  width: 1px;
-  background: var(--border);
-  margin: 10px 0;
-}
-
-.time-label {
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--muted);
-}
-
-.time-col input[type="time"] {
-  width: 100%;
-  border: 1.5px solid var(--border);
-  border-radius: 8px;
-  padding: 6px 7px;
-  font-size: 0.85rem;
-  font-family: inherit;
-  color: var(--text);
-  background: var(--bg);
-  outline: none;
-  transition: border-color 0.2s;
-}
-
-.time-col input[type="time"]:focus { border-color: var(--primary); }
 
 /* =============================
    ボタン

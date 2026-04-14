@@ -50,38 +50,39 @@
         <button class="weight-adj" data-delta="+0.1">＋</button>
       </div>
 
-      <!-- 時間 -->
-      <div class="time-card">
-        <div class="time-cols">
-          <div class="time-col">
-            <div class="time-label">⏰ 起床</div>
-            <input id="wake-input" type="time" />
-          </div>
-          <div class="time-col-divider"></div>
-          <div class="time-col">
-            <div class="time-label">🛏 就寝</div>
-            <input id="sleep-input" type="time" />
-          </div>
-        </div>
-      </div>
-
       <!-- コメント -->
       <div class="section-label">コメント</div>
       <div class="comment-card">
-        <div class="comment-row">
-          <div class="comment-icon">🌅</div>
-          <div class="comment-inner">
-            <div class="comment-label">朝のひとこと</div>
-            <textarea id="morning-input" rows="2" placeholder="今朝の気分は…"></textarea>
+        <!-- 朝 -->
+        <div class="entry-row">
+          <div class="entry-header">
+            <span class="comment-icon">🌅</span>
+            <span class="comment-label">朝のひとこと</span>
+          </div>
+          <div class="entry-time">
+            <span class="entry-time-icon">⏰</span>
+            <input id="wake-input" type="time" class="time-inline" />
           </div>
         </div>
+        <div class="comment-body">
+          <textarea id="morning-input" rows="2" placeholder="今朝の気分は…"></textarea>
+        </div>
+
         <div class="comment-divider"></div>
-        <div class="comment-row">
-          <div class="comment-icon">🌙</div>
-          <div class="comment-inner">
-            <div class="comment-label">夜のひとこと</div>
-            <textarea id="evening-input" rows="2" placeholder="今日一日どうだった…"></textarea>
+
+        <!-- 夜 -->
+        <div class="entry-row">
+          <div class="entry-header">
+            <span class="comment-icon">🌙</span>
+            <span class="comment-label">夜のひとこと</span>
           </div>
+          <div class="entry-time">
+            <span class="entry-time-icon">🛏</span>
+            <input id="sleep-input" type="time" class="time-inline" />
+          </div>
+        </div>
+        <div class="comment-body">
+          <textarea id="evening-input" rows="2" placeholder="今日一日どうだった…"></textarea>
         </div>
       </div>
 
