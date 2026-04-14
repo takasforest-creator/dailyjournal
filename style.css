@@ -240,20 +240,20 @@ html, body {
 
 .time-col {
   flex: 1;
-  padding: 14px 16px;
+  padding: 10px 14px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .time-col-divider {
   width: 1px;
   background: var(--border);
-  margin: 12px 0;
+  margin: 10px 0;
 }
 
 .time-label {
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 700;
   color: var(--muted);
 }
@@ -261,9 +261,9 @@ html, body {
 .time-col input[type="time"] {
   width: 100%;
   border: 1.5px solid var(--border);
-  border-radius: 10px;
-  padding: 9px 8px;
-  font-size: 0.95rem;
+  border-radius: 8px;
+  padding: 6px 7px;
+  font-size: 0.85rem;
   font-family: inherit;
   color: var(--text);
   background: var(--bg);
@@ -451,8 +451,8 @@ button:active { opacity: 0.8; transform: scale(0.97); }
   gap: 6px;
 }
 
-.swipe-bg-right { background: var(--primary); color: #fff; justify-content: flex-start; }
-.swipe-bg-left  { background: var(--danger);  color: #fff; justify-content: flex-end; }
+.swipe-bg-right { background: var(--danger);  color: #fff; justify-content: flex-start; }
+.swipe-bg-left  { background: var(--primary); color: #fff; justify-content: flex-end; }
 
 .timeline-card {
   width: 100%;

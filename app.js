@@ -317,8 +317,8 @@ function renderHistory() {
         ${!isLast ? '<div class="timeline-line"></div>' : ''}
       </div>
       <div class="swipe-container">
-        <div class="swipe-bg swipe-bg-right">✏️ 編集</div>
-        <div class="swipe-bg swipe-bg-left">🗑 削除</div>
+        <div class="swipe-bg swipe-bg-right">🗑 削除</div>
+        <div class="swipe-bg swipe-bg-left">✏️ 編集</div>
         <div class="timeline-card">
           ${thumbHtml}
           <div class="timeline-info">
@@ -365,14 +365,14 @@ function renderHistory() {
       if (!dragged) return;
       const dx = e.changedTouches[0].clientX - txStart;
       if (dx > 80) {
-        // 右スワイプ → 編集
-        startEdit(entry);
-      } else if (dx < -80) {
-        // 左スワイプ → 削除
+        // 右スワイプ → 削除
         if (confirm('この記録を削除しますか？')) {
           saveEntries(loadEntries().filter(e => e.date !== entry.date));
           renderHistory();
         }
+      } else if (dx < -80) {
+        // 左スワイプ → 編集
+        startEdit(entry);
       }
     });
 
