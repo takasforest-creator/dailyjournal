@@ -301,14 +301,15 @@ function renderHistory() {
       ? `<img class="timeline-thumb" src="${entry.photo}" alt="写真" />`
       : `<div class="timeline-thumb-placeholder">🙂</div>`;
 
-    const commentText = entry.morning || entry.evening || '';
-    const commentHtml = commentText
-      ? `<div class="timeline-comment">${escapeHtml(commentText)}</div>`
-      : '';
-
     const weightHtml = entry.weight != null
       ? `<div class="timeline-weight">${entry.weight.toFixed(1)} kg</div>`
       : `<div class="timeline-weight-empty">体重未記録</div>`;
+
+    const wakeHtml  = entry.wakeTime  ? `<span class="tl-time">⏰ ${entry.wakeTime}</span>`  : '';
+    const sleepHtml = entry.sleepTime ? `<span class="tl-time">🛏 ${entry.sleepTime}</span>` : '';
+    const timesHtml = (wakeHtml || sleepHtml)
+      ? `<div class="timeline-times">${wakeHtml}${sleepHtml}</div>`
+      : '';
 
     li.innerHTML = `
       <div class="timeline-date">
@@ -323,7 +324,7 @@ function renderHistory() {
           ${thumbHtml}
           <div class="timeline-info">
             ${weightHtml}
-            ${commentHtml}
+            ${timesHtml}
           </div>
           <div class="timeline-arrow">›</div>
         </div>

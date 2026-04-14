@@ -475,12 +475,16 @@ button:active { opacity: 0.8; transform: scale(0.97); }
 .timeline-weight { font-size: 1.4rem; font-weight: 700; color: var(--primary); }
 .timeline-weight-empty { font-size: 1rem; color: var(--muted); }
 
-.timeline-comment {
-  font-size: 0.78rem;
+.timeline-times {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tl-time {
+  font-size: 0.75rem;
   color: var(--muted);
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .timeline-arrow { display: flex; align-items: center; padding-right: 10px; color: var(--border); font-size: 1.1rem; }
