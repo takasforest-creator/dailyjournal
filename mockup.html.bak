@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>毎朝日記 — モックアップ</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+      background: #f0ebe6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 32px 16px 60px;
+      gap: 24px;
+    }
+
+    h1 { font-size: 1rem; color: #888; letter-spacing: 0.1em; font-weight: 600; }
+
+    /* タブ切り替えボタン */
+    .toggle {
+      display: flex;
+      gap: 8px;
+      background: #fff;
+      border-radius: 50px;
+      padding: 4px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .toggle button {
+      padding: 8px 24px;
+      border: none;
+      border-radius: 50px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: #aaa;
+      background: transparent;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .toggle button.active {
+      background: #ff7043;
+      color: #fff;
+    }
+
+    /* スマホフレーム */
+    .phone-wrap {
+      position: relative;
+      width: 375px;
+      max-width: 100%;
+    }
+
+    .phone {
+      width: 100%;
+      border-radius: 48px;
+      overflow: hidden;
+      background: #fff;
+      box-shadow:
+        0 0 0 10px #1a1a1a,
+        0 30px 80px rgba(0,0,0,0.35);
+      position: relative;
+    }
+
+    /* ノッチ */
+    .phone::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 120px; height: 28px;
+      background: #1a1a1a;
+      border-radius: 0 0 18px 18px;
+      z-index: 10;
+    }
+
+    .phone-screen {
+      width: 100%;
+      overflow: hidden;
+    }
+
+    /* 画面 */
+    .screen { display: none; flex-direction: column; }
+    .screen.active { display: flex; }
+
+    /* ヘッダー */
+    .header {
+      background: linear-gradient(135deg, #ff7043, #ff8a65);
+      color: #fff;
+      padding: 40px 20px 28px;
+    }
+
+    .header-sub { font-size: 0.72rem; opacity: 0.8; letter-spacing: 0.12em; margin-bottom: 4px; }
+    .header-title { font-size: 1.4rem; font-weight: 800; letter-spacing: 0.06em; }
+
+    /* ボディ */
+    .body {
+      background: #fff9f5;
+      padding: 20px 16px 100px;
+      margin-top: -14px;
+      border-radius: 20px 20px 0 0;
+      min-height: 580px;
+    }
+
+    /* セクションラベル */
+    .sec {
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: #ff7043;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin: 18px 0 8px 2px;
+    }
+    .sec:first-child { margin-top: 0; }
+
+    /* 写真エリア */
+    .photo-card {
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: 0 2px 14px rgba(255,112,67,0.10);
+      overflow: hidden;
+    }
+
+    .photo-area {
+      background: #fff3ee;
+      aspect-ratio: 3/4;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      color: #c09080;
+      font-size: 0.85rem;
+    }
+
+    .photo-area .icon { font-size: 3.5rem; }
+
+    /* 撮影後プレビュー（ダミー） */
+    .photo-captured {
+      aspect-ratio: 3/4;
+      background: linear-gradient(160deg, #d4a090 0%, #c08070 50%, #b07060 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 5rem;
+    }
+
+    .photo-controls {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      padding: 14px 16px;
+    }
+
+    .btn-orange {
+      background: #ff7043;
+      color: #fff;
+      border: none;
+      border-radius: 50px;
+      padding: 11px 24px;
+      font-size: 0.88rem;
+      font-weight: 600;
+    }
+
+    .btn-gray {
+      background: #f0e0d6;
+      color: #7a5a4a;
+      border: none;
+      border-radius: 50px;
+      padding: 11px 24px;
+      font-size: 0.88rem;
+      font-weight: 600;
+    }
+
+    /* 体重 */
+    .weight-card {
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: 0 2px 14px rgba(255,112,67,0.10);
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .weight-adj {
+      width: 42px; height: 42px;
+      border-radius: 50%;
+      border: 2px solid #ff7043;
+      background: transparent;
+      color: #ff7043;
+      font-size: 1.3rem;
+      font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .weight-display {
+      flex: 1;
+      text-align: center;
+    }
+
+    .weight-num { font-size: 2.4rem; font-weight: 700; color: #ff7043; }
+    .weight-unit { font-size: 0.9rem; color: #a08070; }
+
+    /* コメント */
+    .comment-card {
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: 0 2px 14px rgba(255,112,67,0.10);
+      overflow: hidden;
+    }
+
+    .comment-row {
+      display: flex;
+      gap: 12px;
+      padding: 14px 16px;
+      align-items: flex-start;
+    }
+
+    .c-icon { font-size: 1.4rem; flex-shrink: 0; margin-top: 2px; }
+
+    .c-inner { flex: 1; }
+
+    .c-label { font-size: 0.72rem; font-weight: 700; color: #a08070; margin-bottom: 6px; }
+
+    .c-box {
+      background: #fff9f5;
+      border: 1.5px solid #f0e0d6;
+      border-radius: 10px;
+      padding: 9px 11px;
+      font-size: 0.85rem;
+      color: #5a3a2a;
+      line-height: 1.5;
+      min-height: 46px;
+    }
+
+    .c-box.placeholder { color: #c0a090; }
+
+    .c-divider { height: 1px; background: #f0e0d6; margin: 0 16px; }
+
+    /* 保存ボタン */
+    .btn-save {
+      display: block;
+      width: 100%;
+      margin-top: 20px;
+      background: linear-gradient(135deg, #ff7043, #ff8a65);
+      color: #fff;
+      border: none;
+      border-radius: 18px;
+      padding: 17px;
+      font-size: 1rem;
+      font-weight: 700;
+      box-shadow: 0 4px 16px rgba(255,112,67,0.30);
+      text-align: center;
+    }
+
+    /* 月フィルター */
+    .month-filter {
+      display: flex;
+      gap: 8px;
+      padding-bottom: 14px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .month-filter::-webkit-scrollbar { display: none; }
+
+    .chip {
+      flex-shrink: 0;
+      padding: 7px 18px;
+      border-radius: 50px;
+      background: #fff;
+      color: #a08070;
+      font-size: 0.82rem;
+      font-weight: 600;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.07);
+      border: none;
+      cursor: pointer;
+    }
+
+    .chip.active { background: #ff7043; color: #fff; }
+
+    /* タイムライン */
+    .timeline { list-style: none; }
+
+    .t-item {
+      display: flex;
+      margin-bottom: 18px;
+    }
+
+    .t-date {
+      width: 52px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 6px;
+    }
+
+    .t-day { font-size: 1.4rem; font-weight: 800; color: #ff7043; line-height: 1; }
+    .t-wd { font-size: 0.68rem; color: #a08070; margin-top: 2px; }
+    .t-line { width: 2px; background: #f0e0d6; flex: 1; margin-top: 8px; min-height: 20px; }
+
+    .t-card {
+      flex: 1;
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: 0 2px 14px rgba(255,112,67,0.10);
+      overflow: hidden;
+      margin-left: 12px;
+      display: flex;
+      align-items: stretch;
+    }
+
+    .t-thumb {
+      width: 80px;
+      flex-shrink: 0;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* ダミー顔写真 */
+    .t-thumb-face {
+      width: 80px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.6rem;
+    }
+
+    .face-a { background: linear-gradient(160deg, #f4c4a0, #e0a080); }
+    .face-b { background: linear-gradient(160deg, #c4d4f4, #a0b0e0); }
+    .face-c { background: linear-gradient(160deg, #c4f4c4, #80c080); }
+
+    .t-info {
+      flex: 1;
+      padding: 12px 10px 12px 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 4px;
+      min-width: 0;
+    }
+
+    .t-weight { font-size: 1.35rem; font-weight: 700; color: #ff7043; }
+    .t-comment { font-size: 0.75rem; color: #a08070; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .t-arrow { display: flex; align-items: center; padding-right: 10px; color: #f0e0d6; font-size: 1.1rem; }
+
+    /* ボトムナビ */
+    .bottom-nav {
+      display: flex;
+      background: #fff;
+      border-top: 1px solid #f0e0d6;
+    }
+
+    .nav-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      padding: 10px 0 18px;
+      border: none;
+      background: transparent;
+      color: #ccc;
+      font-size: 0.65rem;
+      font-weight: 600;
+    }
+
+    .nav-btn.active { color: #ff7043; }
+    .nav-btn-icon { font-size: 1.5rem; }
+  </style>
+</head>
+<body>
+
+  <h1>MOCKUP — 毎朝日記</h1>
+
+  <div class="toggle" id="main-toggle">
+    <button class="active" onclick="showScreen('record')">記録する</button>
+    <button onclick="showScreen('history')">履歴</button>
+  </div>
+
+  <div class="phone-wrap">
+    <div class="phone">
+      <div class="phone-screen">
+
+        <!-- ===== 記録画面 ===== -->
+        <div id="screen-record" class="screen active">
+          <div class="header">
+            <div class="header-sub">2026年4月14日（火）</div>
+            <div class="header-title">DAILY JOURNAL</div>
+          </div>
+
+          <div class="body">
+
+            <!-- 写真 -->
+            <div class="sec">今日の写真</div>
+            <div class="photo-card" id="photo-card">
+              <div class="photo-area" id="photo-placeholder">
+                <div class="icon">🤳</div>
+                <div>カメラを起動して撮影しよう</div>
+              </div>
+              <div class="photo-captured" id="photo-captured" style="display:none">😊</div>
+              <div class="photo-controls">
+                <button class="btn-orange" id="btn-camera" onclick="togglePhoto()">📷 カメラを起動</button>
+                <button class="btn-gray" id="btn-retake" onclick="togglePhoto()" style="display:none">撮り直す</button>
+              </div>
+            </div>
+
+            <!-- 体重 -->
+            <div class="sec">体重</div>
+            <div class="weight-card">
+              <div class="weight-adj">−</div>
+              <div class="weight-display">
+                <span class="weight-num">65.3</span>
+                <span class="weight-unit"> kg</span>
+              </div>
+              <div class="weight-adj">＋</div>
+            </div>
+
+            <!-- コメント -->
+            <div class="sec">コメント</div>
+            <div class="comment-card">
+              <div class="comment-row">
+                <div class="c-icon">🌅</div>
+                <div class="c-inner">
+                  <div class="c-label">朝のひとこと</div>
+                  <div class="c-box">今日もいい天気。体が軽い気がする。</div>
+                </div>
+              </div>
+              <div class="c-divider"></div>
+              <div class="comment-row">
+                <div class="c-icon">🌙</div>
+                <div class="c-inner">
+                  <div class="c-label">夜のひとこと</div>
+                  <div class="c-box placeholder">夜に記録しよう…</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="btn-save">保存する</div>
+          </div>
+
+          <div class="bottom-nav">
+            <button class="nav-btn active">
+              <span class="nav-btn-icon">📝</span>記録
+            </button>
+            <button class="nav-btn" onclick="showScreen('history')">
+              <span class="nav-btn-icon">📖</span>履歴
+            </button>
+          </div>
+        </div>
+
+        <!-- ===== 履歴画面 ===== -->
+        <div id="screen-history" class="screen">
+          <div class="header">
+            <div class="header-sub">これまでの記録</div>
+            <div class="header-title">HISTORY</div>
+          </div>
+
+          <div class="body">
+            <div class="month-filter">
+              <button class="chip active">2026年4月</button>
+              <button class="chip">2026年3月</button>
+              <button class="chip">2026年2月</button>
+            </div>
+
+            <ul class="timeline">
+              <li class="t-item">
+                <div class="t-date">
+                  <div class="t-day">14</div>
+                  <div class="t-wd">火</div>
+                  <div class="t-line"></div>
+                </div>
+                <div class="t-card">
+                  <div class="t-thumb-face face-a">😊</div>
+                  <div class="t-info">
+                    <div class="t-weight">65.3 kg</div>
+                    <div class="t-comment">🌅 今日もいい天気。体が軽い気がする。</div>
+                  </div>
+                  <div class="t-arrow">›</div>
+                </div>
+              </li>
+
+              <li class="t-item">
+                <div class="t-date">
+                  <div class="t-day">13</div>
+                  <div class="t-wd">月</div>
+                  <div class="t-line"></div>
+                </div>
+                <div class="t-card">
+                  <div class="t-thumb-face face-b">😐</div>
+                  <div class="t-info">
+                    <div class="t-weight">65.8 kg</div>
+                    <div class="t-comment">🌅 昨日食べすぎた…</div>
+                  </div>
+                  <div class="t-arrow">›</div>
+                </div>
+              </li>
+
+              <li class="t-item">
+                <div class="t-date">
+                  <div class="t-day">12</div>
+                  <div class="t-wd">日</div>
+                  <div class="t-line"></div>
+                </div>
+                <div class="t-card">
+                  <div class="t-thumb-face face-c">😄</div>
+                  <div class="t-info">
+                    <div class="t-weight">65.1 kg</div>
+                    <div class="t-comment">🌅 週末ランニング達成！</div>
+                  </div>
+                  <div class="t-arrow">›</div>
+                </div>
+              </li>
+
+              <li class="t-item">
+                <div class="t-date">
+                  <div class="t-day">11</div>
+                  <div class="t-wd">土</div>
+                </div>
+                <div class="t-card">
+                  <div class="t-thumb-face face-a">🙂</div>
+                  <div class="t-info">
+                    <div class="t-weight">65.3 kg</div>
+                    <div class="t-comment">🌙 今日は早めに寝よう。</div>
+                  </div>
+                  <div class="t-arrow">›</div>
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          <div class="bottom-nav">
+            <button class="nav-btn" onclick="showScreen('record')">
+              <span class="nav-btn-icon">📝</span>記録
+            </button>
+            <button class="nav-btn active">
+              <span class="nav-btn-icon">📖</span>履歴
+            </button>
+          </div>
+        </div>
+
+      </div><!-- /phone-screen -->
+    </div><!-- /phone -->
+  </div><!-- /phone-wrap -->
+
+  <script>
+    function showScreen(name) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById('screen-' + name).classList.add('active');
+      const btns = document.querySelectorAll('#main-toggle button');
+      btns[0].classList.toggle('active', name === 'record');
+      btns[1].classList.toggle('active', name === 'history');
+    }
+
+    let photoTaken = false;
+    function togglePhoto() {
+      photoTaken = !photoTaken;
+      document.getElementById('photo-placeholder').style.display = photoTaken ? 'none' : 'flex';
+      document.getElementById('photo-captured').style.display  = photoTaken ? 'flex' : 'none';
+      document.getElementById('btn-camera').style.display  = photoTaken ? 'none' : '';
+      document.getElementById('btn-retake').style.display = photoTaken ? ''     : 'none';
+    }
+  </script>
+</body>
+</html>
