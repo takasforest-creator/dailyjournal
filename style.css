@@ -223,7 +223,7 @@ html, body {
 .comment-divider { height: 1px; background: var(--border); margin: 0 16px; }
 
 /* =============================
-   時間カード
+   時間カード（左右並び）
    ============================= */
 .time-card {
   background: var(--card);
@@ -233,30 +233,37 @@ html, body {
   margin-bottom: 4px;
 }
 
-.time-row {
+.time-cols {
   display: flex;
-  gap: 12px;
-  padding: 14px 16px;
-  align-items: center;
+  align-items: stretch;
 }
 
-.time-icon { font-size: 1.4rem; flex-shrink: 0; }
+.time-col {
+  flex: 1;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
 
-.time-inner { flex: 1; }
+.time-col-divider {
+  width: 1px;
+  background: var(--border);
+  margin: 12px 0;
+}
 
 .time-label {
   font-size: 0.78rem;
   font-weight: 700;
   color: var(--muted);
-  margin-bottom: 6px;
 }
 
-.time-inner input[type="time"] {
+.time-col input[type="time"] {
   width: 100%;
   border: 1.5px solid var(--border);
   border-radius: 10px;
-  padding: 9px 11px;
-  font-size: 1rem;
+  padding: 9px 8px;
+  font-size: 0.95rem;
   font-family: inherit;
   color: var(--text);
   background: var(--bg);
@@ -264,9 +271,7 @@ html, body {
   transition: border-color 0.2s;
 }
 
-.time-inner input[type="time"]:focus { border-color: var(--primary); }
-
-.time-divider { height: 1px; background: var(--border); margin: 0 16px; }
+.time-col input[type="time"]:focus { border-color: var(--primary); }
 
 /* =============================
    ボタン
@@ -423,19 +428,41 @@ button:active { opacity: 0.8; transform: scale(0.97); }
   min-height: 20px;
 }
 
-.timeline-card {
+/* =============================
+   スワイプコンテナ
+   ============================= */
+.swipe-container {
   flex: 1;
-  background: var(--card);
+  margin-left: 12px;
+  position: relative;
+  overflow: hidden;
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  overflow: hidden;
-  margin-left: 12px;
-  display: flex;
-  align-items: stretch;
-  transition: transform 0.15s;
 }
 
-.history-item:active .timeline-card { transform: scale(0.98); }
+.swipe-bg {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  gap: 6px;
+}
+
+.swipe-bg-right { background: var(--primary); color: #fff; justify-content: flex-start; }
+.swipe-bg-left  { background: var(--danger);  color: #fff; justify-content: flex-end; }
+
+.timeline-card {
+  width: 100%;
+  background: var(--card);
+  overflow: hidden;
+  display: flex;
+  align-items: stretch;
+  position: relative;
+  z-index: 1;
+}
 
 .timeline-thumb {
   width: 80px;

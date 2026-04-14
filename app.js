@@ -316,16 +316,67 @@ function renderHistory() {
         <div class="timeline-weekday">${WEEKDAYS[d.getDay()]}</div>
         ${!isLast ? '<div class="timeline-line"></div>' : ''}
       </div>
-      <div class="timeline-card">
-        ${thumbHtml}
-        <div class="timeline-info">
-          ${weightHtml}
-          ${commentHtml}
+      <div class="swipe-container">
+        <div class="swipe-bg swipe-bg-right">✏️ 編集</div>
+        <div class="swipe-bg swipe-bg-left">🗑 削除</div>
+        <div class="timeline-card">
+          ${thumbHtml}
+          <div class="timeline-info">
+            ${weightHtml}
+            ${commentHtml}
+          </div>
+          <div class="timeline-arrow">›</div>
         </div>
-        <div class="timeline-arrow">›</div>
       </div>`;
 
-    li.addEventListener('click', () => openDetail(entry));
+    // ── スワイプ処理 ──
+    const card = li.querySelector('.timeline-card');
+    let txStart = 0;
+    let tyStart = 0;
+    let horizontal = null; // null=未決, true=横, false=縦
+    let dragged = false;
+
+    li.addEventListener('touchstart', e => {
+      txStart = e.touches[0].clientX;
+      tyStart = e.touches[0].clientY;
+      horizontal = null;
+      dragged = false;
+      card.style.transition = 'none';
+    }, { passive: true });
+
+    li.addEventListener('touchmove', e => {
+      if (horizontal === false) return;
+      const dx = e.touches[0].clientX - txStart;
+      const dy = e.touches[0].clientY - tyStart;
+      if (horizontal === null) {
+        if (Math.abs(dx) > 6 || Math.abs(dy) > 6) {
+          horizontal = Math.abs(dx) >= Math.abs(dy);
+        }
+        return;
+      }
+      dragged = true;
+      e.preventDefault();
+      card.style.transform = `translateX(${dx}px)`;
+    }, { passive: false });
+
+    li.addEventListener('touchend', e => {
+      card.style.transition = 'transform 0.25s ease';
+      card.style.transform = '';
+      if (!dragged) return;
+      const dx = e.changedTouches[0].clientX - txStart;
+      if (dx > 80) {
+        // 右スワイプ → 編集
+        startEdit(entry);
+      } else if (dx < -80) {
+        // 左スワイプ → 削除
+        if (confirm('この記録を削除しますか？')) {
+          saveEntries(loadEntries().filter(e => e.date !== entry.date));
+          renderHistory();
+        }
+      }
+    });
+
+    li.addEventListener('click', () => { if (!dragged) openDetail(entry); });
     list.appendChild(li);
   });
 }
