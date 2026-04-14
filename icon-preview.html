@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>アイコン案</title>
+  <style>
+    body {
+      font-family: 'Helvetica Neue', Arial, 'Hiragino Sans', sans-serif;
+      background: #f0ebe6;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 32px 16px;
+      gap: 32px;
+      min-height: 100vh;
+    }
+    h1 { font-size: 1rem; color: #888; letter-spacing: 0.1em; margin: 0; }
+    .cards {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      width: 100%;
+      max-width: 360px;
+    }
+    .card {
+      background: #fff;
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 2px 14px rgba(0,0,0,0.08);
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+    .icon-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    /* iPhoneホーム画面風の角丸 */
+    svg {
+      border-radius: 22%;
+      display: block;
+    }
+    .badge {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #ff7043;
+      letter-spacing: 0.08em;
+    }
+    .info h2 { font-size: 1rem; font-weight: 700; color: #2d1a0e; margin: 0 0 6px; }
+    .info p  { font-size: 0.82rem; color: #a08070; margin: 0; line-height: 1.6; }
+  </style>
+</head>
+<body>
+  <h1>アイコンデザイン案</h1>
+  <div class="cards">
+
+    <!-- 案1: 朝日 -->
+    <div class="card">
+      <div class="icon-wrap">
+        <svg width="96" height="96" viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg">
+          <rect width="96" height="96" fill="#ff7043"/>
+          <!-- 地平線 -->
+          <rect x="18" y="58" width="60" height="3" rx="1.5" fill="rgba(255,255,255,0.5)"/>
+          <!-- 太陽 -->
+          <circle cx="48" cy="56" r="16" fill="#fff"/>
+          <!-- 光線 -->
+          <line x1="48" y1="22" x2="48" y2="32" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+          <line x1="24" y1="34" x2="31" y2="41" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+          <line x1="72" y1="34" x2="65" y2="41" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+          <line x1="16" y1="56" x2="26" y2="56" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+          <line x1="80" y1="56" x2="70" y2="56" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+          <!-- アプリ名 -->
+          <text x="48" y="82" text-anchor="middle" font-size="9" font-weight="700"
+                font-family="Helvetica Neue, Arial, sans-serif" fill="#fff" opacity="0.9">DAILY</text>
+        </svg>
+        <span class="badge">案 1</span>
+      </div>
+      <div class="info">
+        <h2>朝日（サンライズ）</h2>
+        <p>オレンジ地に白い太陽と光線。<br/>「毎朝」を直感的に表現。<br/>シンプルで視認性が高い。</p>
+      </div>
+    </div>
+
+    <!-- 案2: 手帳 -->
+    <div class="card">
+      <div class="icon-wrap">
+        <svg width="96" height="96" viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg">
+          <rect width="96" height="96" fill="#fff3ee"/>
+          <!-- ノート本体 -->
+          <rect x="20" y="14" width="56" height="68" rx="6" fill="#ff7043"/>
+          <!-- 背表紙（左の帯） -->
+          <rect x="20" y="14" width="10" height="68" rx="6" fill="#e64a19"/>
+          <rect x="26" y="14" width="4" height="68" fill="#e64a19"/>
+          <!-- ページ（白エリア） -->
+          <rect x="32" y="20" width="38" height="56" rx="3" fill="#fff"/>
+          <!-- 罫線 -->
+          <line x1="37" y1="32" x2="64" y2="32" stroke="#ffd0b5" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="37" y1="40" x2="64" y2="40" stroke="#ffd0b5" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="37" y1="48" x2="64" y2="48" stroke="#ffd0b5" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="37" y1="56" x2="55" y2="56" stroke="#ffd0b5" stroke-width="1.5" stroke-linecap="round"/>
+          <!-- ペン -->
+          <rect x="59" y="52" width="6" height="22" rx="3" fill="#ff7043" transform="rotate(-35 62 63)"/>
+          <polygon points="56,72 60,72 58,78" fill="#2d1a0e" transform="rotate(-35 58 75)"/>
+        </svg>
+        <span class="badge">案 2</span>
+      </div>
+      <div class="info">
+        <h2>手帳（ノート）</h2>
+        <p>温かみのある日記帳のイメージ。<br/>罫線とペンで「書く」ことを表現。<br/>日記アプリらしい定番デザイン。</p>
+      </div>
+    </div>
+
+    <!-- 案3: セルフィー -->
+    <div class="card">
+      <div class="icon-wrap">
+        <svg width="96" height="96" viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg">
+          <rect width="96" height="96" fill="#ff7043"/>
+          <!-- カメラフレーム -->
+          <rect x="16" y="24" width="64" height="52" rx="10" fill="rgba(0,0,0,0.25)"/>
+          <rect x="19" y="27" width="58" height="46" rx="8" fill="rgba(255,255,255,0.12)"/>
+          <!-- レンズ外円 -->
+          <circle cx="48" cy="50" r="18" fill="rgba(255,255,255,0.18)" stroke="#fff" stroke-width="2.5"/>
+          <!-- 顔（白円） -->
+          <circle cx="48" cy="50" r="13" fill="#fff"/>
+          <!-- 目 -->
+          <circle cx="43" cy="47" r="2" fill="#ff7043"/>
+          <circle cx="53" cy="47" r="2" fill="#ff7043"/>
+          <!-- 笑顔 -->
+          <path d="M42 54 Q48 59 54 54" stroke="#ff7043" stroke-width="2" stroke-linecap="round" fill="none"/>
+          <!-- シャッターボタン -->
+          <circle cx="48" cy="83" r="5" fill="#fff" opacity="0.7"/>
+          <!-- カメラ上部 -->
+          <rect x="38" y="20" width="12" height="6" rx="3" fill="rgba(0,0,0,0.25)"/>
+        </svg>
+        <span class="badge">案 3</span>
+      </div>
+      <div class="info">
+        <h2>セルフィー（カメラ）</h2>
+        <p>カメラと笑顔で「自撮り日記」を表現。<br/>このアプリの核心機能を直接表したデザイン。</p>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>
