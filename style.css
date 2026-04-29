@@ -372,6 +372,31 @@ button:active { opacity: 0.8; transform: scale(0.97); }
 .month-chip.active { background: var(--primary); color: #fff; }
 
 /* =============================
+   バックアップバー
+   ============================= */
+.backup-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.btn-backup {
+  flex: 1;
+  padding: 9px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 50px;
+  background: var(--card);
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+  transition: background 0.15s, color 0.15s;
+}
+
+.btn-backup:active { background: var(--primary-pale); color: var(--primary); }
+
+/* =============================
    履歴リスト（タイムライン）
    ============================= */
 .empty-state {

@@ -457,6 +457,54 @@ function openDetail(entry) {
   modal.hidden = false;
 }
 
+/* ── エクスポート ── */
+function exportData() {
+  const entries = loadEntries();
+  if (entries.length === 0) { showToast('記録がありません'); return; }
+  const blob = new Blob([JSON.stringify(entries, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `dailyjournal_${todayKey()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast(`${entries.length}件をエクスポートしました`);
+}
+
+/* ── インポート ── */
+function importData(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    let imported;
+    try { imported = JSON.parse(e.target.result); }
+    catch { alert('ファイルの読み込みに失敗しました'); return; }
+    if (!Array.isArray(imported) || !imported.every(x => x.date)) {
+      alert('正しいバックアップファイルではありません'); return;
+    }
+    if (!confirm(`${imported.length}件の記録が見つかりました。\n現在のデータに追加しますか？\n（同じ日の記録は読み込んだ方で上書きされます）`)) return;
+    const map = new Map(loadEntries().map(e => [e.date, e]));
+    imported.forEach(e => map.set(e.date, e));
+    const merged = [...map.values()].sort((a, b) => b.date.localeCompare(a.date));
+    saveEntries(merged);
+    showToast(`${imported.length}件をインポートしました`);
+    renderHistory();
+  };
+  reader.readAsText(file);
+}
+
+/* ── バックアップバー初期化 ── */
+function initBackup() {
+  document.getElementById('btn-export').addEventListener('click', exportData);
+  const fileInput = document.getElementById('import-file');
+  document.getElementById('btn-import').addEventListener('click', () => {
+    fileInput.value = '';
+    fileInput.click();
+  });
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files[0]) importData(fileInput.files[0]);
+  });
+}
+
 /* ── 初期化 ── */
 document.addEventListener('DOMContentLoaded', () => {
   initHeader();
@@ -465,4 +513,5 @@ document.addEventListener('DOMContentLoaded', () => {
   initWeightControls();
   initSave();
   initModal();
+  initBackup();
 });
