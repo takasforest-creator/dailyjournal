@@ -484,18 +484,34 @@ button:active { opacity: 0.8; transform: scale(0.97); }
   z-index: 1;
 }
 
+.timeline-photo-col {
+  width: 80px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 .timeline-thumb {
   width: 80px;
-  height: 100%;
-  flex-shrink: 0;
+  flex: 1;
   object-fit: cover;
   display: block;
+  min-height: 60px;
+}
+
+.timeline-thumb-weight {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--primary);
+  text-align: center;
+  padding: 4px 2px;
+  background: var(--card);
+  white-space: nowrap;
 }
 
 .timeline-thumb-placeholder {
-  width: 80px;
-  flex-shrink: 0;
   background: var(--primary-pale);
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;

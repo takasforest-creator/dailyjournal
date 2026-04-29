@@ -309,9 +309,11 @@ function renderTimeline(filtered, entries) {
     li.className = 'history-item';
     const isLast = i === filtered.length - 1;
 
-    const thumbHtml = entry.photo
+    const thumbInner = entry.photo
       ? `<img class="timeline-thumb" src="${entry.photo}" alt="写真" />`
       : `<div class="timeline-thumb-placeholder">🙂</div>`;
+    const weightLabel = entry.weight != null ? `${entry.weight.toFixed(1)} kg` : '';
+    const thumbHtml = `<div class="timeline-photo-col">${thumbInner}${weightLabel ? `<div class="timeline-thumb-weight">${weightLabel}</div>` : ''}</div>`;
 
     const wakeHtml  = entry.wakeTime  ? `<span class="tl-time">⏰ ${entry.wakeTime}</span>`  : '';
     const sleepHtml = entry.sleepTime ? `<span class="tl-time">🛏 ${entry.sleepTime}</span>` : '';
