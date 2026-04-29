@@ -446,10 +446,10 @@ function initModal() {
   card.addEventListener('touchend', e => {
     if (!mIsH) return;
     const dx = e.changedTouches[0].clientX - mTx;
-    if (dx > 60 && detailIndex > 0) {
-      openDetail(detailEntries[detailIndex - 1]); // 右スワイプ → 翌日
-    } else if (dx < -60 && detailIndex < detailEntries.length - 1) {
-      openDetail(detailEntries[detailIndex + 1]); // 左スワイプ → 前日
+    if (dx > 60 && detailIndex < detailEntries.length - 1) {
+      openDetail(detailEntries[detailIndex + 1]); // 右スワイプ → 前日
+    } else if (dx < -60 && detailIndex > 0) {
+      openDetail(detailEntries[detailIndex - 1]); // 左スワイプ → 翌日
     }
   });
 }
