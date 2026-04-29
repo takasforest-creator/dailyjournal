@@ -5,6 +5,9 @@ let stream = null;
 let capturedDataUrl = null;
 let currentMonth = null;
 let editingEntry = null;
+let viewMode = 'list';       // 'list' | 'grid'
+let detailEntries = [];
+let detailIndex   = 0;
 
 /* ── ユーティリティ ── */
 const WEEKDAYS = ['日','月','火','水','木','金','土'];
@@ -263,23 +266,18 @@ function startEdit(entry) {
 /* ── 履歴レンダリング ── */
 function renderHistory() {
   const entries = loadEntries();
-  const list   = document.getElementById('history-list');
-  const empty  = document.getElementById('history-empty');
-  const filter = document.getElementById('month-filter');
+  const list    = document.getElementById('history-list');
+  const grid    = document.getElementById('photo-grid');
+  const empty   = document.getElementById('history-empty');
+  const filter  = document.getElementById('month-filter');
 
-  list.innerHTML   = '';
-  filter.innerHTML = '';
+  list.innerHTML = grid.innerHTML = filter.innerHTML = '';
 
-  if (entries.length === 0) {
-    empty.hidden = false;
-    return;
-  }
+  if (entries.length === 0) { empty.hidden = false; return; }
   empty.hidden = true;
 
   const months = [...new Set(entries.map(e => monthKey(e.date)))];
-  if (!currentMonth || !months.includes(currentMonth)) {
-    currentMonth = months[0];
-  }
+  if (!currentMonth || !months.includes(currentMonth)) currentMonth = months[0];
 
   months.forEach(ym => {
     const btn = document.createElement('button');
@@ -291,6 +289,20 @@ function renderHistory() {
 
   const filtered = entries.filter(e => monthKey(e.date) === currentMonth);
 
+  if (viewMode === 'grid') {
+    list.hidden = true;
+    grid.hidden = false;
+    renderPhotoGrid(filtered, entries);
+  } else {
+    grid.hidden = true;
+    list.hidden = false;
+    renderTimeline(filtered, entries);
+  }
+}
+
+function renderTimeline(filtered, entries) {
+  const list = document.getElementById('history-list');
+
   filtered.forEach((entry, i) => {
     const d = new Date(entry.date + 'T00:00:00');
     const li = document.createElement('li');
@@ -301,15 +313,14 @@ function renderHistory() {
       ? `<img class="timeline-thumb" src="${entry.photo}" alt="写真" />`
       : `<div class="timeline-thumb-placeholder">🙂</div>`;
 
-    const weightHtml = entry.weight != null
-      ? `<div class="timeline-weight">${entry.weight.toFixed(1)} kg</div>`
-      : `<div class="timeline-weight-empty">体重未記録</div>`;
-
     const wakeHtml  = entry.wakeTime  ? `<span class="tl-time">⏰ ${entry.wakeTime}</span>`  : '';
     const sleepHtml = entry.sleepTime ? `<span class="tl-time">🛏 ${entry.sleepTime}</span>` : '';
     const timesHtml = (wakeHtml || sleepHtml)
-      ? `<div class="timeline-times">${wakeHtml}${sleepHtml}</div>`
-      : '';
+      ? `<div class="timeline-times">${wakeHtml}${sleepHtml}</div>` : '';
+    const morningHtml = entry.morning
+      ? `<div class="timeline-comment">🌅 ${escapeHtml(entry.morning)}</div>` : '';
+    const eveningHtml = entry.evening
+      ? `<div class="timeline-comment">🌙 ${escapeHtml(entry.evening)}</div>` : '';
 
     li.innerHTML = `
       <div class="timeline-date">
@@ -323,25 +334,21 @@ function renderHistory() {
         <div class="timeline-card">
           ${thumbHtml}
           <div class="timeline-info">
-            ${weightHtml}
             ${timesHtml}
+            ${morningHtml}
+            ${eveningHtml}
           </div>
           <div class="timeline-arrow">›</div>
         </div>
       </div>`;
 
-    // ── スワイプ処理 ──
     const card = li.querySelector('.timeline-card');
-    let txStart = 0;
-    let tyStart = 0;
-    let horizontal = null; // null=未決, true=横, false=縦
-    let dragged = false;
+    let txStart = 0, tyStart = 0, horizontal = null, dragged = false;
 
     li.addEventListener('touchstart', e => {
       txStart = e.touches[0].clientX;
       tyStart = e.touches[0].clientY;
-      horizontal = null;
-      dragged = false;
+      horizontal = null; dragged = false;
       card.style.transition = 'none';
     }, { passive: true });
 
@@ -350,9 +357,7 @@ function renderHistory() {
       const dx = e.touches[0].clientX - txStart;
       const dy = e.touches[0].clientY - tyStart;
       if (horizontal === null) {
-        if (Math.abs(dx) > 6 || Math.abs(dy) > 6) {
-          horizontal = Math.abs(dx) >= Math.abs(dy);
-        }
+        if (Math.abs(dx) > 6 || Math.abs(dy) > 6) horizontal = Math.abs(dx) >= Math.abs(dy);
         return;
       }
       dragged = true;
@@ -366,19 +371,34 @@ function renderHistory() {
       if (!dragged) return;
       const dx = e.changedTouches[0].clientX - txStart;
       if (dx > 80) {
-        // 右スワイプ → 削除
         if (confirm('この記録を削除しますか？')) {
           saveEntries(loadEntries().filter(e => e.date !== entry.date));
           renderHistory();
         }
       } else if (dx < -80) {
-        // 左スワイプ → 編集
         startEdit(entry);
       }
     });
 
-    li.addEventListener('click', () => { if (!dragged) openDetail(entry); });
+    li.addEventListener('click', () => { if (!dragged) openDetail(entry, entries); });
     list.appendChild(li);
+  });
+}
+
+function renderPhotoGrid(filtered, entries) {
+  const grid = document.getElementById('photo-grid');
+  filtered.forEach(entry => {
+    const d    = new Date(entry.date + 'T00:00:00');
+    const tile = document.createElement('div');
+    tile.className = 'photo-tile';
+    const dateLabel = `${d.getMonth()+1}/${d.getDate()}`;
+    if (entry.photo) {
+      tile.innerHTML = `<img src="${entry.photo}" alt="${entry.date}" /><div class="photo-tile-date">${dateLabel}</div>`;
+    } else {
+      tile.innerHTML = `<div class="photo-tile-placeholder">🙂</div><div class="photo-tile-date">${dateLabel}</div>`;
+    }
+    tile.addEventListener('click', () => openDetail(entry, entries));
+    grid.appendChild(tile);
   });
 }
 
@@ -402,9 +422,41 @@ function initModal() {
     close();
     renderHistory();
   });
+
+  // モーダル内スワイプで前日/翌日ナビゲーション
+  const card = modal.querySelector('.modal-card');
+  let mTx = 0, mTy = 0, mIsH = null;
+
+  card.addEventListener('touchstart', e => {
+    mTx = e.touches[0].clientX;
+    mTy = e.touches[0].clientY;
+    mIsH = null;
+  }, { passive: true });
+
+  card.addEventListener('touchmove', e => {
+    if (mIsH === false) return;
+    const dx = e.touches[0].clientX - mTx;
+    const dy = e.touches[0].clientY - mTy;
+    if (mIsH === null && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
+      mIsH = Math.abs(dx) > Math.abs(dy);
+    }
+    if (mIsH) e.preventDefault();
+  }, { passive: false });
+
+  card.addEventListener('touchend', e => {
+    if (!mIsH) return;
+    const dx = e.changedTouches[0].clientX - mTx;
+    if (dx > 60 && detailIndex > 0) {
+      openDetail(detailEntries[detailIndex - 1]); // 右スワイプ → 翌日
+    } else if (dx < -60 && detailIndex < detailEntries.length - 1) {
+      openDetail(detailEntries[detailIndex + 1]); // 左スワイプ → 前日
+    }
+  });
 }
 
-function openDetail(entry) {
+function openDetail(entry, entries) {
+  if (entries) detailEntries = entries;
+  detailIndex = detailEntries.findIndex(e => e.date === entry.date);
   const modal = document.getElementById('detail-modal');
   modal.dataset.entryDate = entry.date;
   document.getElementById('modal-date').textContent = formatDateFull(entry.date);
@@ -505,6 +557,16 @@ function initBackup() {
   });
 }
 
+/* ── 表示切替 ── */
+function initViewToggle() {
+  const btn = document.getElementById('btn-view-toggle');
+  btn.addEventListener('click', () => {
+    viewMode = viewMode === 'list' ? 'grid' : 'list';
+    btn.textContent = viewMode === 'grid' ? '☰' : '⊞';
+    renderHistory();
+  });
+}
+
 /* ── 初期化 ── */
 document.addEventListener('DOMContentLoaded', () => {
   initHeader();
@@ -514,4 +576,5 @@ document.addEventListener('DOMContentLoaded', () => {
   initSave();
   initModal();
   initBackup();
+  initViewToggle();
 });
