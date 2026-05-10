@@ -35,7 +35,15 @@ function loadEntries() {
 }
 
 function saveEntries(entries) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+  } catch (e) {
+    if (e.name === 'QuotaExceededError' || e.code === 22) {
+      alert('保存容量が不足しています。\n古い記録の写真をいくつか削除するか、バックアップ後に古い記録を整理してください。');
+    } else {
+      throw e;
+    }
+  }
 }
 
 function showToast(msg) {
@@ -113,13 +121,16 @@ function initCamera() {
   }
 
   function capturePhoto() {
-    canvas.width  = video.videoWidth;
-    canvas.height = video.videoHeight;
+    const MAX = 480;
+    const ow = video.videoWidth, oh = video.videoHeight;
+    const scale = Math.min(1, MAX / Math.max(ow, oh));
+    canvas.width  = Math.round(ow * scale);
+    canvas.height = Math.round(oh * scale);
     const ctx = canvas.getContext('2d');
     ctx.translate(canvas.width, 0);
     ctx.scale(-1, 1);
-    ctx.drawImage(video, 0, 0);
-    capturedDataUrl = canvas.toDataURL('image/jpeg', 0.75);
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    capturedDataUrl = canvas.toDataURL('image/jpeg', 0.65);
     stopStream();
     video.hidden = true;
     preview.src = capturedDataUrl;
