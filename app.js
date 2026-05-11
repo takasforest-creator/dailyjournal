@@ -13,6 +13,11 @@ let detailIndex   = 0;
 const SUPABASE_URL = 'https://nraanwywbbmdwpcxwgop.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5yYWFud3l3YmJtZHdwY3h3Z29wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0OTU1MTksImV4cCI6MjA5NDA3MTUxOX0.Yl4i4rZk55ypEkxZLfIJa3KtNWwnqMVkzsTbgFunmh8';
 let sbClient = null;
+let sbPhotoCache = new Map(); // date -> base64（localStorage には保存しない）
+
+function getPhoto(entry) {
+  return sbPhotoCache.get(entry.date) || entry.photo || null;
+}
 
 function initSupabase() {
   if (window.supabase) {
@@ -29,7 +34,7 @@ function entryToRow(e) {
     weight:     e.weight ?? null,
     morning:    e.morning  || null,
     evening:    e.evening  || null,
-    photo:      (e.photo && !e.photo.startsWith('data:')) ? e.photo : null,
+    photo:      e.photo || null, // base64 も含めてDBに保存
     wake_time:  e.wakeTime  || null,
     sleep_time: e.sleepTime || null,
     updated_at: new Date().toISOString(),
@@ -43,43 +48,18 @@ function rowToEntry(row) {
     weight:    row.weight,
     morning:   row.morning,
     evening:   row.evening,
-    photo:     row.photo,
+    photo:     null, // localStorageには保存しない（sbPhotoCacheを使う）
     wakeTime:  row.wake_time,
     sleepTime: row.sleep_time,
   };
 }
 
-function base64ToBlob(dataUrl) {
-  const [header, data] = dataUrl.split(',');
-  const mime = header.match(/:(.*?);/)[1];
-  const bytes = atob(data);
-  const arr = new Uint8Array(bytes.length);
-  for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
-  return new Blob([arr], { type: mime });
-}
-
-async function uploadPhoto(base64, dateKey) {
-  if (!sbClient || !base64) return null;
-  try {
-    const blob = base64ToBlob(base64);
-    const { error } = await sbClient.storage
-      .from('photos')
-      .upload(`${dateKey}.jpg`, blob, { contentType: 'image/jpeg', upsert: true });
-    if (error) { alert('写真アップロード失敗:\n' + error.message + '\n\ncode: ' + error.code); throw error; }
-    const { data } = sbClient.storage.from('photos').getPublicUrl(`${dateKey}.jpg`);
-    return data.publicUrl;
-  } catch (err) {
-    console.error('uploadPhoto error:', err);
-    return null;
-  }
-}
-
 async function sbPush(entry) {
-  if (!sbClient) { alert('Supabase 未接続'); return; }
+  if (!sbClient) return;
   try {
     const { error } = await sbClient.from('entries')
       .upsert(entryToRow(entry), { onConflict: 'date' });
-    if (error) { alert('DB保存失敗:\n' + error.message + '\n\ncode: ' + error.code); throw error; }
+    if (error) throw error;
   } catch (err) {
     console.error('sbPush error:', err);
   }
@@ -87,9 +67,9 @@ async function sbPush(entry) {
 
 async function sbDelete(date) {
   if (!sbClient) return;
+  sbPhotoCache.delete(date);
   try {
     await sbClient.from('entries').delete().eq('date', date);
-    await sbClient.storage.from('photos').remove([`${date}.jpg`]);
   } catch (err) {
     console.error('sbDelete error:', err);
   }
@@ -105,24 +85,20 @@ async function sbSync() {
     const local   = loadEntries();
     const sbDates = new Set((data || []).map(r => r.date));
 
-    // ローカルにあって Supabase にない、またはまだ base64 のままのエントリを同期
+    // ローカルにあって Supabase にないエントリを同期
     for (const entry of local) {
-      const needsUpload = entry.photo && entry.photo.startsWith('data:');
-      if (!sbDates.has(entry.date) || needsUpload) {
-        if (needsUpload) {
-          const url = await uploadPhoto(entry.photo, entry.date);
-          if (url) {
-            entry.photo = url;
-            const all = loadEntries();
-            const i = all.findIndex(e => e.date === entry.date);
-            if (i !== -1) { all[i].photo = url; saveEntries(all); }
-          }
-        }
-        await sbPush(entry);
+      if (!sbDates.has(entry.date)) {
+        const photo = sbPhotoCache.get(entry.date) || entry.photo || null;
+        await sbPush({ ...entry, photo });
       }
     }
 
-    // Supabase のデータで localStorage をマージ更新（URL に置き換え）
+    // Supabase のデータをキャッシュに反映
+    (data || []).forEach(row => {
+      if (row.photo) sbPhotoCache.set(row.date, row.photo);
+    });
+
+    // localStorage にはメタデータのみ保存（写真なし）
     const merged = new Map(local.map(e => [e.date, e]));
     (data || []).forEach(row => merged.set(row.date, rowToEntry(row)));
     const sorted = [...merged.values()].sort((a, b) => b.date.localeCompare(a.date));
@@ -361,20 +337,12 @@ function initSave() {
     editingEntry = null;
     resetForm();
 
-    // 新規撮影した写真を Supabase Storage にアップロードして URL を localStorage に反映
+    // 写真をキャッシュに保存して Supabase に同期
     (async () => {
-      let finalPhoto = localPhoto;
-      if (isNewCapture) {
-        const url = await uploadPhoto(photoBase64, entry.date);
-        if (url) {
-          finalPhoto = url;
-          const all = loadEntries();
-          const i = all.findIndex(e => e.date === entry.date);
-          if (i !== -1) { all[i].photo = url; saveEntries(all); }
-          if (document.getElementById('screen-history').classList.contains('active')) {
-            renderHistory();
-          }
-        }
+      const finalPhoto = isNewCapture ? photoBase64 : localPhoto;
+      if (finalPhoto) sbPhotoCache.set(entry.date, finalPhoto);
+      if (isNewCapture && document.getElementById('screen-history').classList.contains('active')) {
+        renderHistory();
       }
       await sbPush({ ...entry, photo: finalPhoto });
     })();
@@ -400,11 +368,11 @@ function startEdit(entry) {
 
   // 写真プレビュー
   stopStream();
-  capturedDataUrl = entry.photo || null;
+  capturedDataUrl = getPhoto(entry) || null;
   const preview     = document.getElementById('photo-preview');
   const placeholder = document.getElementById('camera-placeholder');
-  if (entry.photo) {
-    preview.src = entry.photo;
+  if (capturedDataUrl) {
+    preview.src = capturedDataUrl;
     preview.hidden      = false;
     placeholder.hidden  = true;
     document.getElementById('btn-start-camera').hidden = true;
@@ -470,8 +438,9 @@ function renderTimeline(filtered, entries) {
     li.className = 'history-item';
     const isLast = i === filtered.length - 1;
 
-    const thumbInner = entry.photo
-      ? `<img class="timeline-thumb" src="${entry.photo}" alt="写真" />`
+    const photo = getPhoto(entry);
+    const thumbInner = photo
+      ? `<img class="timeline-thumb" src="${photo}" alt="写真" />`
       : `<div class="timeline-thumb-placeholder">🙂</div>`;
     const weightLabel = entry.weight != null ? `${entry.weight.toFixed(1)} kg` : '';
     const thumbHtml = `<div class="timeline-photo-col">${thumbInner}${weightLabel ? `<div class="timeline-thumb-weight">${weightLabel}</div>` : ''}</div>`;
@@ -556,8 +525,9 @@ function renderPhotoGrid(filtered, entries) {
     const tile = document.createElement('div');
     tile.className = 'photo-tile';
     const dateLabel = `${d.getMonth()+1}/${d.getDate()}`;
-    if (entry.photo) {
-      tile.innerHTML = `<img src="${entry.photo}" alt="${entry.date}" /><div class="photo-tile-date">${dateLabel}</div>`;
+    const tilePhoto = getPhoto(entry);
+    if (tilePhoto) {
+      tile.innerHTML = `<img src="${tilePhoto}" alt="${entry.date}" /><div class="photo-tile-date">${dateLabel}</div>`;
     } else {
       tile.innerHTML = `<div class="photo-tile-placeholder">🙂</div><div class="photo-tile-date">${dateLabel}</div>`;
     }
@@ -627,10 +597,11 @@ function openDetail(entry, entries) {
   modal.dataset.entryDate = entry.date;
   document.getElementById('modal-date').textContent = formatDateFull(entry.date);
 
-  const photo   = document.getElementById('modal-photo');
-  const noPhoto = document.getElementById('modal-no-photo');
-  if (entry.photo) {
-    photo.src = entry.photo;
+  const photo    = document.getElementById('modal-photo');
+  const noPhoto  = document.getElementById('modal-no-photo');
+  const photoSrc = getPhoto(entry);
+  if (photoSrc) {
+    photo.src = photoSrc;
     photo.hidden = false;
     noPhoto.hidden = true;
   } else {
