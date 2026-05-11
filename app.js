@@ -322,19 +322,22 @@ function initSave() {
     const key = editingEntry ? editingEntry.date : todayKey();
     const idx = entries.findIndex(e => e.date === key);
 
+    const photoBase64 = capturedDataUrl || null;
+    // 既存エントリの写真（URL）を引き継ぐ
+    const existingPhoto = (idx !== -1 && !photoBase64) ? (entries[idx].photo || null) : null;
+
     const entry = {
       date:      key,
       ts:        new Date().toISOString(),
       weight:    isNaN(weight) ? null : weight,
       morning,
       evening,
-      photo:     capturedDataUrl || null,
+      photo:     existingPhoto, // base64 は localStorage に保存しない
       wakeTime,
       sleepTime,
     };
 
     if (idx !== -1) {
-      // 編集中は確認なしで上書き、新規で既存あり場合は確認
       if (!editingEntry && !confirm('今日の記録がすでにあります。上書きしますか？')) return;
       entries[idx] = entry;
     } else {
@@ -346,18 +349,19 @@ function initSave() {
     editingEntry = null;
     resetForm();
 
-    // 写真をストレージにアップロードして localStorage の base64 を URL に置換
+    // 写真を Supabase Storage にアップロードして URL を localStorage に反映
     (async () => {
-      if (entry.photo && entry.photo.startsWith('data:')) {
-        const url = await uploadPhoto(entry.photo, entry.date);
+      let photo = existingPhoto;
+      if (photoBase64 && photoBase64.startsWith('data:')) {
+        const url = await uploadPhoto(photoBase64, entry.date);
         if (url) {
+          photo = url;
           const all = loadEntries();
           const i = all.findIndex(e => e.date === entry.date);
           if (i !== -1) { all[i].photo = url; saveEntries(all); }
-          entry.photo = url;
         }
       }
-      await sbPush(entry);
+      await sbPush({ ...entry, photo });
     })();
   });
 }
@@ -684,7 +688,12 @@ function importData(file) {
     const map = new Map(loadEntries().map(e => [e.date, e]));
     imported.forEach(e => map.set(e.date, e));
     const merged = [...map.values()].sort((a, b) => b.date.localeCompare(a.date));
-    saveEntries(merged);
+    // base64 は localStorage に保存しない（容量節約）
+    const mergedForLocal = merged.map(e => ({
+      ...e,
+      photo: (e.photo && !e.photo.startsWith('data:')) ? e.photo : null,
+    }));
+    saveEntries(mergedForLocal);
     showToast(`${imported.length}件をインポートしました`);
     renderHistory();
     (async () => {
