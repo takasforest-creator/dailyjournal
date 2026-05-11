@@ -674,27 +674,17 @@ function importData(file) {
     const map = new Map(loadEntries().map(e => [e.date, e]));
     imported.forEach(e => map.set(e.date, e));
     const merged = [...map.values()].sort((a, b) => b.date.localeCompare(a.date));
-    // base64 は localStorage に保存しない（容量節約）
-    const mergedForLocal = merged.map(e => ({
-      ...e,
-      photo: (e.photo && !e.photo.startsWith('data:')) ? e.photo : null,
-    }));
-    saveEntries(mergedForLocal);
+    // localStorage には写真なしで保存
+    saveEntries(merged.map(e => ({ ...e, photo: null })));
     showToast(`${imported.length}件をインポートしました`);
     renderHistory();
+    // 写真をキャッシュに入れて Supabase に同期
     (async () => {
       for (const entry of imported) {
-        if (entry.photo && entry.photo.startsWith('data:')) {
-          const url = await uploadPhoto(entry.photo, entry.date);
-          if (url) {
-            const all = loadEntries();
-            const i = all.findIndex(e => e.date === entry.date);
-            if (i !== -1) { all[i].photo = url; saveEntries(all); }
-            entry.photo = url;
-          }
-        }
+        if (entry.photo) sbPhotoCache.set(entry.date, entry.photo);
         await sbPush(entry);
       }
+      renderHistory();
     })();
   };
   reader.readAsText(file);
