@@ -17,6 +17,8 @@ let sbClient = null;
 function initSupabase() {
   if (window.supabase) {
     sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  } else {
+    showToast('⚠️ Supabase SDK 読み込み失敗');
   }
 }
 
@@ -55,7 +57,7 @@ async function uploadPhoto(base64, dateKey) {
     const { error } = await sbClient.storage
       .from('photos')
       .upload(`${dateKey}.jpg`, blob, { contentType: 'image/jpeg', upsert: true });
-    if (error) throw error;
+    if (error) { showToast('⚠️ 写真アップロード失敗: ' + error.message); throw error; }
     const { data } = sbClient.storage.from('photos').getPublicUrl(`${dateKey}.jpg`);
     return data.publicUrl;
   } catch (err) {
@@ -65,11 +67,11 @@ async function uploadPhoto(base64, dateKey) {
 }
 
 async function sbPush(entry) {
-  if (!sbClient) return;
+  if (!sbClient) { showToast('⚠️ Supabase 未接続'); return; }
   try {
     const { error } = await sbClient.from('entries')
       .upsert(entryToRow(entry), { onConflict: 'date' });
-    if (error) throw error;
+    if (error) { showToast('⚠️ DB保存失敗: ' + error.message); throw error; }
   } catch (err) {
     console.error('sbPush error:', err);
   }
