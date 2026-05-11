@@ -67,11 +67,11 @@ async function uploadPhoto(base64, dateKey) {
 }
 
 async function sbPush(entry) {
-  if (!sbClient) { showToast('⚠️ Supabase 未接続'); return; }
+  if (!sbClient) { alert('Supabase 未接続'); return; }
   try {
     const { error } = await sbClient.from('entries')
       .upsert(entryToRow(entry), { onConflict: 'date' });
-    if (error) { showToast('⚠️ DB保存失敗: ' + error.message); throw error; }
+    if (error) { alert('DB保存失敗:\n' + error.message + '\n\ncode: ' + error.code); throw error; }
   } catch (err) {
     console.error('sbPush error:', err);
   }
