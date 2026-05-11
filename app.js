@@ -323,8 +323,10 @@ function initSave() {
     const idx = entries.findIndex(e => e.date === key);
 
     const photoBase64 = capturedDataUrl || null;
-    // 既存エントリの写真（URL）を引き継ぐ
-    const existingPhoto = (idx !== -1 && !photoBase64) ? (entries[idx].photo || null) : null;
+    const isNewCapture  = photoBase64 && photoBase64.startsWith('data:');
+    const isExistingUrl = photoBase64 && !photoBase64.startsWith('data:');
+    // localStorage には URL のみ保存（base64 は保存しない）
+    const localPhoto = isExistingUrl ? photoBase64 : (idx !== -1 && !isNewCapture ? (entries[idx].photo || null) : null);
 
     const entry = {
       date:      key,
@@ -332,7 +334,7 @@ function initSave() {
       weight:    isNaN(weight) ? null : weight,
       morning,
       evening,
-      photo:     existingPhoto, // base64 は localStorage に保存しない
+      photo:     localPhoto,
       wakeTime,
       sleepTime,
     };
@@ -349,19 +351,22 @@ function initSave() {
     editingEntry = null;
     resetForm();
 
-    // 写真を Supabase Storage にアップロードして URL を localStorage に反映
+    // 新規撮影した写真を Supabase Storage にアップロードして URL を localStorage に反映
     (async () => {
-      let photo = existingPhoto;
-      if (photoBase64 && photoBase64.startsWith('data:')) {
+      let finalPhoto = localPhoto;
+      if (isNewCapture) {
         const url = await uploadPhoto(photoBase64, entry.date);
         if (url) {
-          photo = url;
+          finalPhoto = url;
           const all = loadEntries();
           const i = all.findIndex(e => e.date === entry.date);
           if (i !== -1) { all[i].photo = url; saveEntries(all); }
+          if (document.getElementById('screen-history').classList.contains('active')) {
+            renderHistory();
+          }
         }
       }
-      await sbPush({ ...entry, photo });
+      await sbPush({ ...entry, photo: finalPhoto });
     })();
   });
 }
