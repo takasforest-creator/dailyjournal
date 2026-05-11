@@ -59,7 +59,7 @@ async function sbPush(entry) {
   try {
     const { error } = await sbClient.from('entries')
       .upsert(entryToRow(entry), { onConflict: 'date' });
-    if (error) throw error;
+    if (error) { alert('DB保存エラー:\n' + error.message); throw error; }
   } catch (err) {
     console.error('sbPush error:', err);
   }
@@ -725,4 +725,5 @@ document.addEventListener('DOMContentLoaded', () => {
   initViewToggle();
   initSupabase();
   sbSync();
+  setTimeout(() => showToast('v21 起動'), 500);
 });
