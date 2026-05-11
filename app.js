@@ -9,6 +9,123 @@ let viewMode = 'list';       // 'list' | 'grid'
 let detailEntries = [];
 let detailIndex   = 0;
 
+/* ── Supabase ── */
+const SUPABASE_URL = 'https://nraanwywbbmdwpcxwgop.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5yYWFud3l3YmJtZHdwY3h3Z29wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0OTU1MTksImV4cCI6MjA5NDA3MTUxOX0.Yl4i4rZk55ypEkxZLfIJa3KtNWwnqMVkzsTbgFunmh8';
+let sbClient = null;
+
+function initSupabase() {
+  if (window.supabase) {
+    sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  }
+}
+
+function entryToRow(e) {
+  return {
+    date:       e.date,
+    ts:         e.ts ? new Date(e.ts).getTime() : null,
+    weight:     e.weight ?? null,
+    morning:    e.morning  || null,
+    evening:    e.evening  || null,
+    photo:      (e.photo && !e.photo.startsWith('data:')) ? e.photo : null,
+    wake_time:  e.wakeTime  || null,
+    sleep_time: e.sleepTime || null,
+    updated_at: new Date().toISOString(),
+  };
+}
+
+function rowToEntry(row) {
+  return {
+    date:      row.date,
+    ts:        row.ts ? new Date(row.ts).toISOString() : null,
+    weight:    row.weight,
+    morning:   row.morning,
+    evening:   row.evening,
+    photo:     row.photo,
+    wakeTime:  row.wake_time,
+    sleepTime: row.sleep_time,
+  };
+}
+
+async function uploadPhoto(base64, dateKey) {
+  if (!sbClient || !base64) return null;
+  try {
+    const res  = await fetch(base64);
+    const blob = await res.blob();
+    const { error } = await sbClient.storage
+      .from('photos')
+      .upload(`${dateKey}.jpg`, blob, { contentType: 'image/jpeg', upsert: true });
+    if (error) throw error;
+    const { data } = sbClient.storage.from('photos').getPublicUrl(`${dateKey}.jpg`);
+    return data.publicUrl;
+  } catch (err) {
+    console.error('uploadPhoto error:', err);
+    return null;
+  }
+}
+
+async function sbPush(entry) {
+  if (!sbClient) return;
+  try {
+    const { error } = await sbClient.from('entries')
+      .upsert(entryToRow(entry), { onConflict: 'date' });
+    if (error) throw error;
+  } catch (err) {
+    console.error('sbPush error:', err);
+  }
+}
+
+async function sbDelete(date) {
+  if (!sbClient) return;
+  try {
+    await sbClient.from('entries').delete().eq('date', date);
+    await sbClient.storage.from('photos').remove([`${date}.jpg`]);
+  } catch (err) {
+    console.error('sbDelete error:', err);
+  }
+}
+
+async function sbSync() {
+  if (!sbClient) return;
+  try {
+    const { data, error } = await sbClient.from('entries')
+      .select('*').order('date', { ascending: false });
+    if (error) throw error;
+
+    const local   = loadEntries();
+    const sbDates = new Set((data || []).map(r => r.date));
+
+    // ローカルにあって Supabase にない、またはまだ base64 のままのエントリを同期
+    for (const entry of local) {
+      const needsUpload = entry.photo && entry.photo.startsWith('data:');
+      if (!sbDates.has(entry.date) || needsUpload) {
+        if (needsUpload) {
+          const url = await uploadPhoto(entry.photo, entry.date);
+          if (url) {
+            entry.photo = url;
+            const all = loadEntries();
+            const i = all.findIndex(e => e.date === entry.date);
+            if (i !== -1) { all[i].photo = url; saveEntries(all); }
+          }
+        }
+        await sbPush(entry);
+      }
+    }
+
+    // Supabase のデータで localStorage をマージ更新（URL に置き換え）
+    const merged = new Map(local.map(e => [e.date, e]));
+    (data || []).forEach(row => merged.set(row.date, rowToEntry(row)));
+    const sorted = [...merged.values()].sort((a, b) => b.date.localeCompare(a.date));
+    saveEntries(sorted);
+
+    if (document.getElementById('screen-history').classList.contains('active')) {
+      renderHistory();
+    }
+  } catch (err) {
+    console.error('sbSync error:', err);
+  }
+}
+
 /* ── ユーティリティ ── */
 const WEEKDAYS = ['日','月','火','水','木','金','土'];
 
@@ -228,6 +345,20 @@ function initSave() {
     showToast(editingEntry ? '更新しました！' : '保存しました！');
     editingEntry = null;
     resetForm();
+
+    // 写真をストレージにアップロードして localStorage の base64 を URL に置換
+    (async () => {
+      if (entry.photo && entry.photo.startsWith('data:')) {
+        const url = await uploadPhoto(entry.photo, entry.date);
+        if (url) {
+          const all = loadEntries();
+          const i = all.findIndex(e => e.date === entry.date);
+          if (i !== -1) { all[i].photo = url; saveEntries(all); }
+          entry.photo = url;
+        }
+      }
+      await sbPush(entry);
+    })();
   });
 }
 
@@ -386,6 +517,7 @@ function renderTimeline(filtered, entries) {
       if (dx > 80) {
         if (confirm('この記録を削除しますか？')) {
           saveEntries(loadEntries().filter(e => e.date !== entry.date));
+          sbDelete(entry.date);
           renderHistory();
         }
       } else if (dx < -80) {
@@ -431,9 +563,11 @@ function initModal() {
 
   document.getElementById('modal-delete').addEventListener('click', () => {
     if (!confirm('この記録を削除しますか？')) return;
-    saveEntries(loadEntries().filter(e => e.date !== modal.dataset.entryDate));
+    const dateToDelete = modal.dataset.entryDate;
+    saveEntries(loadEntries().filter(e => e.date !== dateToDelete));
     close();
     renderHistory();
+    sbDelete(dateToDelete);
   });
 
   // モーダル内スワイプで前日/翌日ナビゲーション
@@ -553,6 +687,20 @@ function importData(file) {
     saveEntries(merged);
     showToast(`${imported.length}件をインポートしました`);
     renderHistory();
+    (async () => {
+      for (const entry of imported) {
+        if (entry.photo && entry.photo.startsWith('data:')) {
+          const url = await uploadPhoto(entry.photo, entry.date);
+          if (url) {
+            const all = loadEntries();
+            const i = all.findIndex(e => e.date === entry.date);
+            if (i !== -1) { all[i].photo = url; saveEntries(all); }
+            entry.photo = url;
+          }
+        }
+        await sbPush(entry);
+      }
+    })();
   };
   reader.readAsText(file);
 }
@@ -590,4 +738,6 @@ document.addEventListener('DOMContentLoaded', () => {
   initModal();
   initBackup();
   initViewToggle();
+  initSupabase();
+  sbSync();
 });
