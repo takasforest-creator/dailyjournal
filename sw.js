@@ -1,6 +1,6 @@
 'use strict';
 
-const CACHE = 'dailyjournal-v17';
+const CACHE = 'dailyjournal-v18';
 const ASSETS = [
   '/',
   '/index.html',

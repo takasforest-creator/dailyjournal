@@ -49,15 +49,23 @@ function rowToEntry(row) {
   };
 }
 
+function base64ToBlob(dataUrl) {
+  const [header, data] = dataUrl.split(',');
+  const mime = header.match(/:(.*?);/)[1];
+  const bytes = atob(data);
+  const arr = new Uint8Array(bytes.length);
+  for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
+  return new Blob([arr], { type: mime });
+}
+
 async function uploadPhoto(base64, dateKey) {
   if (!sbClient || !base64) return null;
   try {
-    const res  = await fetch(base64);
-    const blob = await res.blob();
+    const blob = base64ToBlob(base64);
     const { error } = await sbClient.storage
       .from('photos')
       .upload(`${dateKey}.jpg`, blob, { contentType: 'image/jpeg', upsert: true });
-    if (error) { showToast('⚠️ 写真アップロード失敗: ' + error.message); throw error; }
+    if (error) { alert('写真アップロード失敗:\n' + error.message + '\n\ncode: ' + error.code); throw error; }
     const { data } = sbClient.storage.from('photos').getPublicUrl(`${dateKey}.jpg`);
     return data.publicUrl;
   } catch (err) {
