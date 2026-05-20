@@ -72,60 +72,46 @@ async function checkAuth() {
 }
 
 function initAuth() {
-  let pendingEmail = '', pendingPassword = '';
-
-  function getCredentials() {
-    return {
-      email:    document.getElementById('login-email').value.trim(),
-      password: document.getElementById('login-password').value,
-    };
-  }
-
-  function showSignupStep() {
-    document.getElementById('login-form-wrap').hidden = true;
-    document.getElementById('login-signup-wrap').hidden = false;
-  }
-
   function showLoginStep() {
-    document.getElementById('login-signup-wrap').hidden = true;
     document.getElementById('login-form-wrap').hidden = false;
+    document.getElementById('login-reset-wrap').hidden = true;
   }
 
   document.getElementById('btn-login').addEventListener('click', async () => {
-    const { email, password } = getCredentials();
+    const email    = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
     if (!email || !password) { alert('メールアドレスとパスワードを入力してください'); return; }
-    pendingEmail = email;
-    pendingPassword = password;
+
     const btn = document.getElementById('btn-login');
     btn.disabled = true;
+
+    // まずログインを試みる
     const { data, error } = await sbClient.auth.signInWithPassword({ email, password });
-    btn.disabled = false;
     if (!error && data?.session) {
       await onLoggedIn(data.session);
-    } else if (error && (error.message.includes('Invalid login credentials') || error.message.includes('invalid_credentials'))) {
-      showSignupStep();
+      btn.disabled = false;
+      return;
+    }
+
+    // ログイン失敗 → 新規ユーザーなら登録を試みる
+    if (error && (error.message.includes('Invalid login credentials') || error.message.includes('invalid_credentials'))) {
+      const { data: sd, error: se } = await sbClient.auth.signUp({ email, password });
+      if (!se && sd?.session) {
+        await onLoggedIn(sd.session);
+      } else if (se && se.message.includes('already registered')) {
+        alert('パスワードが違います。\n「パスワードを設定 / リセット」からパスワードを設定してください。');
+      } else if (!se && sd?.user) {
+        alert('確認メールを送信しました。\nメールのリンクを開いてから再度ログインしてください。');
+      } else {
+        alert('エラー: ' + (se?.message || '不明なエラー'));
+      }
     } else if (error) {
       alert('ログイン失敗: ' + error.message);
     }
-  });
 
-  document.getElementById('btn-signup').addEventListener('click', async () => {
-    const btn = document.getElementById('btn-signup');
-    btn.disabled = true;
-    const { data, error } = await sbClient.auth.signUp({ email: pendingEmail, password: pendingPassword });
     btn.disabled = false;
-    if (!error && data?.session) {
-      await onLoggedIn(data.session);
-    } else if (!error && data?.user) {
-      // メール確認が必要な場合（Supabase設定による）
-      alert('確認メールを送信しました。メールのリンクをクリックしてから再度ログインしてください。');
-      showLoginStep();
-    } else if (error) {
-      alert('登録失敗: ' + error.message);
-    }
   });
 
-  document.getElementById('btn-back-login').addEventListener('click', showLoginStep);
   document.getElementById('btn-back-login2').addEventListener('click', showLoginStep);
 
   document.getElementById('btn-forgot').addEventListener('click', async () => {
