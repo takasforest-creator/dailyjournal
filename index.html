@@ -14,11 +14,28 @@
 </head>
 <body>
 
+  <!-- ログイン画面 -->
+  <div id="screen-login" class="screen active">
+    <div class="login-wrap">
+      <div class="login-icon">📖</div>
+      <h1 class="login-title">DAILY JOURNAL</h1>
+      <p class="login-subtitle">毎朝の記録</p>
+      <div id="login-form-wrap">
+        <p class="login-desc">メールアドレスを入力すると<br>ログインリンクをお送りします</p>
+        <input id="login-email" type="email" inputmode="email" placeholder="メールアドレス" class="login-input" />
+        <button id="btn-login" class="btn-primary login-btn">ログインリンクを送る</button>
+      </div>
+      <p id="login-sent" class="login-sent" hidden>
+        ✉️ メールを送信しました<br>届いたリンクをタップしてください
+      </p>
+    </div>
+  </div>
+
   <!-- 記録画面 -->
-  <div id="screen-record" class="screen active">
+  <div id="screen-record" class="screen">
     <div class="header">
       <div class="header-sub" id="header-date"></div>
-      <div class="header-title">DAILY JOURNAL <span style="font-size:0.5rem;opacity:0.6">v21</span></div>
+      <div class="header-title">DAILY JOURNAL <span style="font-size:0.5rem;opacity:0.6">v22</span></div>
     </div>
 
     <div class="body-scroll">
@@ -119,7 +136,7 @@
   </div>
 
   <!-- ボトムナビ -->
-  <nav class="bottom-nav">
+  <nav class="bottom-nav" hidden>
     <button class="nav-item active" data-screen="record">
       <span class="nav-icon">📝</span>
       <span class="nav-label">記録</span>

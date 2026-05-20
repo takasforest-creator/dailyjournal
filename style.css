@@ -712,3 +712,48 @@ button:active { opacity: 0.8; transform: scale(0.97); }
 
 .modal-comment-icon { font-size: 1.1rem; flex-shrink: 0; }
 .modal-comment span:last-child { font-size: 0.88rem; color: var(--text); line-height: 1.6; }
+
+/* ── ログイン画面 ── */
+.login-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100dvh;
+  padding: 40px 32px;
+  gap: 12px;
+  text-align: center;
+}
+
+.login-icon { font-size: 3.5rem; margin-bottom: 8px; }
+.login-title { font-size: 1.4rem; font-weight: 800; letter-spacing: 0.12em; color: var(--primary); }
+.login-subtitle { font-size: 0.85rem; color: var(--muted); letter-spacing: 0.08em; margin-bottom: 24px; }
+.login-desc { font-size: 0.88rem; color: var(--muted); line-height: 1.7; margin-bottom: 16px; }
+
+.login-input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  font-size: 1rem;
+  background: var(--card);
+  color: var(--text);
+  margin-bottom: 12px;
+  outline: none;
+}
+.login-input:focus { border-color: var(--primary); }
+
+.login-btn {
+  width: 100%;
+  padding: 14px;
+  border-radius: 50px;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.login-sent {
+  font-size: 0.95rem;
+  color: var(--primary);
+  line-height: 1.8;
+  margin-top: 16px;
+}

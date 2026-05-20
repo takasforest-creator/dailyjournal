@@ -8,6 +8,7 @@ let editingEntry = null;
 let viewMode = 'list';       // 'list' | 'grid'
 let detailEntries = [];
 let detailIndex   = 0;
+let currentUserId = null;
 
 /* ── Supabase ── */
 const SUPABASE_URL = 'https://nraanwywbbmdwpcxwgop.supabase.co';
@@ -22,9 +23,70 @@ function getPhoto(entry) {
 function initSupabase() {
   if (window.supabase) {
     sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-  } else {
-    showToast('⚠️ Supabase SDK 読み込み失敗');
   }
+}
+
+function showLoginScreen() {
+  document.getElementById('screen-login').classList.add('active');
+  document.getElementById('screen-record').classList.remove('active');
+  document.getElementById('screen-history').classList.remove('active');
+  document.querySelector('.bottom-nav').hidden = true;
+}
+
+function showApp() {
+  document.getElementById('screen-login').classList.remove('active');
+  document.getElementById('screen-record').classList.add('active');
+  document.querySelector('.nav-item[data-screen="record"]').classList.add('active');
+  document.querySelector('.bottom-nav').hidden = false;
+}
+
+async function migrateUserIds() {
+  if (!sbClient || !currentUserId) return;
+  try {
+    await sbClient.from('entries')
+      .update({ user_id: currentUserId })
+      .is('user_id', null);
+  } catch (err) {
+    console.error('migrateUserIds error:', err);
+  }
+}
+
+async function checkAuth() {
+  if (!sbClient) return;
+  const { data: { session } } = await sbClient.auth.getSession();
+  if (session) {
+    currentUserId = session.user.id;
+    showApp();
+    await migrateUserIds();
+    sbSync();
+  } else {
+    showLoginScreen();
+  }
+  sbClient.auth.onAuthStateChange(async (event, session) => {
+    if (session && !currentUserId) {
+      currentUserId = session.user.id;
+      showApp();
+      await migrateUserIds();
+      sbSync();
+    }
+  });
+}
+
+function initAuth() {
+  document.getElementById('btn-login').addEventListener('click', async () => {
+    const email = document.getElementById('login-email').value.trim();
+    if (!email) return;
+    const { error } = await sbClient.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: window.location.origin },
+    });
+    if (error) {
+      alert('送信失敗: ' + error.message);
+    } else {
+      document.getElementById('login-form-wrap').hidden = true;
+      document.getElementById('login-sent').hidden = false;
+    }
+  });
 }
 
 function entryToRow(e) {
@@ -34,10 +96,11 @@ function entryToRow(e) {
     weight:     e.weight ?? null,
     morning:    e.morning  || null,
     evening:    e.evening  || null,
-    photo:      e.photo || null, // base64 も含めてDBに保存
+    photo:      e.photo || null,
     wake_time:  e.wakeTime  || null,
     sleep_time: e.sleepTime || null,
     updated_at: new Date().toISOString(),
+    user_id:    currentUserId,
   };
 }
 
@@ -724,6 +787,6 @@ document.addEventListener('DOMContentLoaded', () => {
   initBackup();
   initViewToggle();
   initSupabase();
-  sbSync();
-  setTimeout(() => showToast('v21 起動'), 500);
+  initAuth();
+  checkAuth();
 });
