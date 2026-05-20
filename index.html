@@ -21,15 +21,15 @@
       <h1 class="login-title">DAILY JOURNAL</h1>
       <p class="login-subtitle">毎朝の記録</p>
       <div id="login-form-wrap">
-        <p class="login-desc">メールアドレスを入力すると<br>6桁の確認コードをお送りします</p>
+        <p class="login-desc">メールアドレスとパスワードでログインします</p>
         <input id="login-email" type="email" inputmode="email" placeholder="メールアドレス" class="login-input" autocomplete="email" />
-        <button id="btn-login" class="btn-primary login-btn">コードを送る</button>
+        <input id="login-password" type="password" placeholder="パスワード" class="login-input" autocomplete="current-password" />
+        <button id="btn-login" class="btn-primary login-btn">ログイン</button>
       </div>
-      <div id="login-otp-wrap" hidden>
-        <p class="login-desc">✉️ コードを送信しました<br>メールに届いた6桁の数字を入力してください</p>
-        <input id="login-otp" type="text" inputmode="numeric" maxlength="6" placeholder="000000" class="login-input login-otp-input" autocomplete="one-time-code" />
-        <button id="btn-verify" class="btn-primary login-btn">ログイン</button>
-        <button id="btn-resend" class="login-resend-btn">再送する</button>
+      <div id="login-signup-wrap" hidden>
+        <p class="login-desc">このメールアドレスはまだ登録されていません。<br>新規登録しますか？</p>
+        <button id="btn-signup" class="btn-primary login-btn">新規登録してログイン</button>
+        <button id="btn-back-login" class="login-resend-btn">戻る</button>
       </div>
     </div>
   </div>

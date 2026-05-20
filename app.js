@@ -72,52 +72,63 @@ async function checkAuth() {
 }
 
 function initAuth() {
-  let pendingEmail = '';
+  let pendingEmail = '', pendingPassword = '';
 
-  async function sendOtp(email) {
-    const { error } = await sbClient.auth.signInWithOtp({ email });
-    if (error) {
-      alert('送信失敗: ' + error.message);
-      return false;
-    }
+  function getCredentials() {
+    return {
+      email:    document.getElementById('login-email').value.trim(),
+      password: document.getElementById('login-password').value,
+    };
+  }
+
+  function showSignupStep() {
     document.getElementById('login-form-wrap').hidden = true;
-    document.getElementById('login-otp-wrap').hidden = false;
-    document.getElementById('login-otp').value = '';
-    document.getElementById('login-otp').focus();
-    return true;
+    document.getElementById('login-signup-wrap').hidden = false;
+  }
+
+  function showLoginStep() {
+    document.getElementById('login-signup-wrap').hidden = true;
+    document.getElementById('login-form-wrap').hidden = false;
   }
 
   document.getElementById('btn-login').addEventListener('click', async () => {
-    const email = document.getElementById('login-email').value.trim();
-    if (!email) return;
+    const { email, password } = getCredentials();
+    if (!email || !password) { alert('メールアドレスとパスワードを入力してください'); return; }
     pendingEmail = email;
-    await sendOtp(email);
-  });
-
-  document.getElementById('btn-verify').addEventListener('click', async () => {
-    const token = document.getElementById('login-otp').value.trim();
-    if (token.length !== 6) { alert('6桁のコードを入力してください'); return; }
-    const { data, error } = await sbClient.auth.verifyOtp({
-      email: pendingEmail, token, type: 'email',
-    });
-    if (error) {
-      alert('認証失敗: ' + error.message);
-    } else if (data?.session) {
+    pendingPassword = password;
+    const btn = document.getElementById('btn-login');
+    btn.disabled = true;
+    const { data, error } = await sbClient.auth.signInWithPassword({ email, password });
+    btn.disabled = false;
+    if (!error && data?.session) {
       await onLoggedIn(data.session);
+    } else if (error && (error.message.includes('Invalid login credentials') || error.message.includes('invalid_credentials'))) {
+      showSignupStep();
+    } else if (error) {
+      alert('ログイン失敗: ' + error.message);
     }
   });
 
-  document.getElementById('btn-resend').addEventListener('click', async () => {
-    if (!pendingEmail) return;
-    await sendOtp(pendingEmail);
+  document.getElementById('btn-signup').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-signup');
+    btn.disabled = true;
+    const { data, error } = await sbClient.auth.signUp({ email: pendingEmail, password: pendingPassword });
+    btn.disabled = false;
+    if (!error && data?.session) {
+      await onLoggedIn(data.session);
+    } else if (!error && data?.user) {
+      // メール確認が必要な場合（Supabase設定による）
+      alert('確認メールを送信しました。メールのリンクをクリックしてから再度ログインしてください。');
+      showLoginStep();
+    } else if (error) {
+      alert('登録失敗: ' + error.message);
+    }
   });
 
-  // Enter キーで次のステップへ
-  document.getElementById('login-email').addEventListener('keydown', e => {
+  document.getElementById('btn-back-login').addEventListener('click', showLoginStep);
+
+  document.getElementById('login-password').addEventListener('keydown', e => {
     if (e.key === 'Enter') document.getElementById('btn-login').click();
-  });
-  document.getElementById('login-otp').addEventListener('keydown', e => {
-    if (e.key === 'Enter') document.getElementById('btn-verify').click();
   });
 }
 
