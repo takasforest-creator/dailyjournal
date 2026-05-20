@@ -66,39 +66,58 @@ async function checkAuth() {
     return;
   }
   showLoginScreen();
-
-  // Safari でマジックリンク処理後に PWA へ戻った場合のためポーリング
-  const poll = setInterval(async () => {
-    const { data: { session } } = await sbClient.auth.getSession();
-    if (session) {
-      clearInterval(poll);
-      await onLoggedIn(session);
-    }
-  }, 2000);
-
-  // onAuthStateChange でもキャッチ（同一コンテキストの場合）
   sbClient.auth.onAuthStateChange(async (event, session) => {
-    if (session && !currentUserId) {
-      clearInterval(poll);
-      await onLoggedIn(session);
-    }
+    if (session && !currentUserId) await onLoggedIn(session);
   });
 }
 
 function initAuth() {
+  let pendingEmail = '';
+
+  async function sendOtp(email) {
+    const { error } = await sbClient.auth.signInWithOtp({ email });
+    if (error) {
+      alert('送信失敗: ' + error.message);
+      return false;
+    }
+    document.getElementById('login-form-wrap').hidden = true;
+    document.getElementById('login-otp-wrap').hidden = false;
+    document.getElementById('login-otp').value = '';
+    document.getElementById('login-otp').focus();
+    return true;
+  }
+
   document.getElementById('btn-login').addEventListener('click', async () => {
     const email = document.getElementById('login-email').value.trim();
     if (!email) return;
-    const { error } = await sbClient.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: window.location.origin },
+    pendingEmail = email;
+    await sendOtp(email);
+  });
+
+  document.getElementById('btn-verify').addEventListener('click', async () => {
+    const token = document.getElementById('login-otp').value.trim();
+    if (token.length !== 6) { alert('6桁のコードを入力してください'); return; }
+    const { data, error } = await sbClient.auth.verifyOtp({
+      email: pendingEmail, token, type: 'email',
     });
     if (error) {
-      alert('送信失敗: ' + error.message);
-    } else {
-      document.getElementById('login-form-wrap').hidden = true;
-      document.getElementById('login-sent').hidden = false;
+      alert('認証失敗: ' + error.message);
+    } else if (data?.session) {
+      await onLoggedIn(data.session);
     }
+  });
+
+  document.getElementById('btn-resend').addEventListener('click', async () => {
+    if (!pendingEmail) return;
+    await sendOtp(pendingEmail);
+  });
+
+  // Enter キーで次のステップへ
+  document.getElementById('login-email').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('btn-login').click();
+  });
+  document.getElementById('login-otp').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('btn-verify').click();
   });
 }
 

@@ -751,9 +751,21 @@ button:active { opacity: 0.8; transform: scale(0.97); }
   font-weight: 700;
 }
 
-.login-sent {
-  font-size: 0.95rem;
-  color: var(--primary);
-  line-height: 1.8;
-  margin-top: 16px;
+.login-otp-input {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: 0.4em;
+  text-align: center;
+  padding: 14px 8px;
+}
+
+.login-resend-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 0.85rem;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 8px;
+  margin-top: 4px;
 }

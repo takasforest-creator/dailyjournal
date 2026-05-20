@@ -21,13 +21,16 @@
       <h1 class="login-title">DAILY JOURNAL</h1>
       <p class="login-subtitle">毎朝の記録</p>
       <div id="login-form-wrap">
-        <p class="login-desc">メールアドレスを入力すると<br>ログインリンクをお送りします</p>
-        <input id="login-email" type="email" inputmode="email" placeholder="メールアドレス" class="login-input" />
-        <button id="btn-login" class="btn-primary login-btn">ログインリンクを送る</button>
+        <p class="login-desc">メールアドレスを入力すると<br>6桁の確認コードをお送りします</p>
+        <input id="login-email" type="email" inputmode="email" placeholder="メールアドレス" class="login-input" autocomplete="email" />
+        <button id="btn-login" class="btn-primary login-btn">コードを送る</button>
       </div>
-      <p id="login-sent" class="login-sent" hidden>
-        ✉️ メールを送信しました<br>届いたリンクをタップしてください
-      </p>
+      <div id="login-otp-wrap" hidden>
+        <p class="login-desc">✉️ コードを送信しました<br>メールに届いた6桁の数字を入力してください</p>
+        <input id="login-otp" type="text" inputmode="numeric" maxlength="6" placeholder="000000" class="login-input login-otp-input" autocomplete="one-time-code" />
+        <button id="btn-verify" class="btn-primary login-btn">ログイン</button>
+        <button id="btn-resend" class="login-resend-btn">再送する</button>
+      </div>
     </div>
   </div>
 
@@ -35,7 +38,7 @@
   <div id="screen-record" class="screen">
     <div class="header">
       <div class="header-sub" id="header-date"></div>
-      <div class="header-title">DAILY JOURNAL <span style="font-size:0.5rem;opacity:0.6">v23</span></div>
+      <div class="header-title">DAILY JOURNAL <span style="font-size:0.5rem;opacity:0.6">v24</span></div>
     </div>
 
     <div class="body-scroll">
@@ -185,7 +188,7 @@
   <script src="app.js"></script>
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js?v=21');
+      navigator.serviceWorker.register('/sw.js?v=24');
     }
   </script>
 </body>
