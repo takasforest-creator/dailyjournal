@@ -9,6 +9,7 @@ let viewMode = 'list';       // 'list' | 'grid'
 let detailEntries = [];
 let detailIndex   = 0;
 let currentUserId = null;
+let recoveryMode = false;
 
 /* ── Supabase ── */
 const SUPABASE_URL = 'https://nraanwywbbmdwpcxwgop.supabase.co';
@@ -60,15 +61,32 @@ async function onLoggedIn(session) {
 
 async function checkAuth() {
   if (!sbClient) return;
+
+  sbClient.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'PASSWORD_RECOVERY') {
+      recoveryMode = true;
+      showLoginScreen();
+      document.getElementById('login-form-wrap').hidden = true;
+      document.getElementById('login-reset-wrap').hidden = true;
+      document.getElementById('login-new-password-wrap').hidden = false;
+    } else if (session && !currentUserId && !recoveryMode) {
+      await onLoggedIn(session);
+    }
+  });
+
+  const isRecovery = window.location.hash.includes('type=recovery');
+  if (isRecovery) {
+    recoveryMode = true;
+    showLoginScreen();
+    return;
+  }
+
   const { data: { session } } = await sbClient.auth.getSession();
   if (session) {
     await onLoggedIn(session);
     return;
   }
   showLoginScreen();
-  sbClient.auth.onAuthStateChange(async (event, session) => {
-    if (session && !currentUserId) await onLoggedIn(session);
-  });
 }
 
 function initAuth() {
@@ -113,6 +131,29 @@ function initAuth() {
   });
 
   document.getElementById('btn-back-login2').addEventListener('click', showLoginStep);
+
+  document.getElementById('btn-set-password').addEventListener('click', async () => {
+    const password = document.getElementById('login-new-password').value;
+    if (password.length < 6) { alert('6文字以上のパスワードを入力してください'); return; }
+    const btn = document.getElementById('btn-set-password');
+    btn.disabled = true;
+    const { error } = await sbClient.auth.updateUser({ password });
+    btn.disabled = false;
+    if (error) {
+      alert('設定失敗: ' + error.message);
+    } else {
+      recoveryMode = false;
+      // URLのハッシュを消してセッションで直接ログイン
+      history.replaceState(null, '', window.location.pathname);
+      const { data: { session } } = await sbClient.auth.getSession();
+      if (session) {
+        await onLoggedIn(session);
+      } else {
+        showLoginStep();
+        alert('パスワードを設定しました！ログインしてください。');
+      }
+    }
+  });
 
   document.getElementById('btn-forgot').addEventListener('click', async () => {
     const email = document.getElementById('login-email').value.trim();

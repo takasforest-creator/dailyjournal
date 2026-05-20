@@ -28,8 +28,13 @@
         <button id="btn-forgot" class="login-resend-btn">パスワードを設定 / リセット</button>
       </div>
       <div id="login-reset-wrap" hidden>
-        <p class="login-desc">✉️ パスワード設定のメールを送りました<br>届いたリンクをSafariで開き<br>パスワードを設定してください</p>
+        <p class="login-desc">✉️ パスワード設定のメールを送りました<br>届いたリンクをSafariで開いてください</p>
         <button id="btn-back-login2" class="login-resend-btn">ログイン画面に戻る</button>
+      </div>
+      <div id="login-new-password-wrap" hidden>
+        <p class="login-desc">新しいパスワードを設定してください<br><span style="font-size:0.8em;color:var(--muted)">6文字以上</span></p>
+        <input id="login-new-password" type="password" placeholder="新しいパスワード" class="login-input" autocomplete="new-password" />
+        <button id="btn-set-password" class="btn-primary login-btn">パスワードを設定してログイン</button>
       </div>
     </div>
   </div>
