@@ -51,23 +51,36 @@ async function migrateUserIds() {
   }
 }
 
+async function onLoggedIn(session) {
+  currentUserId = session.user.id;
+  showApp();
+  await migrateUserIds();
+  sbSync();
+}
+
 async function checkAuth() {
   if (!sbClient) return;
   const { data: { session } } = await sbClient.auth.getSession();
   if (session) {
-    currentUserId = session.user.id;
-    showApp();
-    await migrateUserIds();
-    sbSync();
-  } else {
-    showLoginScreen();
+    await onLoggedIn(session);
+    return;
   }
+  showLoginScreen();
+
+  // Safari でマジックリンク処理後に PWA へ戻った場合のためポーリング
+  const poll = setInterval(async () => {
+    const { data: { session } } = await sbClient.auth.getSession();
+    if (session) {
+      clearInterval(poll);
+      await onLoggedIn(session);
+    }
+  }, 2000);
+
+  // onAuthStateChange でもキャッチ（同一コンテキストの場合）
   sbClient.auth.onAuthStateChange(async (event, session) => {
     if (session && !currentUserId) {
-      currentUserId = session.user.id;
-      showApp();
-      await migrateUserIds();
-      sbSync();
+      clearInterval(poll);
+      await onLoggedIn(session);
     }
   });
 }
