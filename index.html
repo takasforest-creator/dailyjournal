@@ -25,11 +25,16 @@
         <input id="login-email" type="email" inputmode="email" placeholder="メールアドレス" class="login-input" autocomplete="email" />
         <input id="login-password" type="password" placeholder="パスワード" class="login-input" autocomplete="current-password" />
         <button id="btn-login" class="btn-primary login-btn">ログイン</button>
+        <button id="btn-forgot" class="login-resend-btn">パスワードを設定 / リセット</button>
       </div>
       <div id="login-signup-wrap" hidden>
         <p class="login-desc">このメールアドレスはまだ登録されていません。<br>新規登録しますか？</p>
         <button id="btn-signup" class="btn-primary login-btn">新規登録してログイン</button>
         <button id="btn-back-login" class="login-resend-btn">戻る</button>
+      </div>
+      <div id="login-reset-wrap" hidden>
+        <p class="login-desc">✉️ パスワード設定のメールを送りました<br>届いたリンクをSafariで開き<br>パスワードを設定してください</p>
+        <button id="btn-back-login2" class="login-resend-btn">ログイン画面に戻る</button>
       </div>
     </div>
   </div>

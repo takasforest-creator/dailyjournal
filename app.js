@@ -126,6 +126,21 @@ function initAuth() {
   });
 
   document.getElementById('btn-back-login').addEventListener('click', showLoginStep);
+  document.getElementById('btn-back-login2').addEventListener('click', showLoginStep);
+
+  document.getElementById('btn-forgot').addEventListener('click', async () => {
+    const email = document.getElementById('login-email').value.trim();
+    if (!email) { alert('メールアドレスを入力してください'); return; }
+    const { error } = await sbClient.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin,
+    });
+    if (error) {
+      alert('送信失敗: ' + error.message);
+    } else {
+      document.getElementById('login-form-wrap').hidden = true;
+      document.getElementById('login-reset-wrap').hidden = false;
+    }
+  });
 
   document.getElementById('login-password').addEventListener('keydown', e => {
     if (e.key === 'Enter') document.getElementById('btn-login').click();
