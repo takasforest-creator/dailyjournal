@@ -17,6 +17,15 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 let sbClient = null;
 let sbPhotoCache = new Map(); // date -> base64（localStorage には保存しない）
 
+function dbg(msg) {
+  const el = document.getElementById('debug-lines');
+  if (!el) return;
+  document.getElementById('debug-log').style.display = 'block';
+  const line = document.createElement('div');
+  line.textContent = new Date().toISOString().slice(11,19) + ' ' + msg;
+  el.prepend(line);
+}
+
 function getPhoto(entry) {
   return sbPhotoCache.get(entry.date) || entry.photo || null;
 }
@@ -226,12 +235,14 @@ async function sbDelete(date) {
 }
 
 async function sbSync() {
-  if (!sbClient) return;
+  if (!sbClient) { dbg('sbSync: sbClient=null, skip'); return; }
+  dbg('sbSync: start');
   try {
     const { data, error } = await sbClient.from('entries')
       .select('date,ts,weight,morning,evening,wake_time,sleep_time,updated_at,user_id')
       .order('date', { ascending: false });
     if (error) throw error;
+    dbg('sbSync: entries=' + (data ? data.length : 'null'));
 
     const local   = loadEntries();
     const sbDates = new Set((data || []).map(r => r.date));
@@ -247,35 +258,45 @@ async function sbSync() {
     (data || []).forEach(row => merged.set(row.date, rowToEntry(row)));
     const sorted = [...merged.values()].sort((a, b) => b.date.localeCompare(a.date));
     saveEntries(sorted);
+    dbg('sbSync: saved ' + sorted.length + ' entries');
 
     // renderHistory() が currentMonth を確定させてから写真を取得する
     renderHistory();
+    dbg('sbSync: currentMonth=' + currentMonth);
     if (currentMonth) {
       await syncPhotosForMonth(currentMonth);
       renderHistory();
+    } else {
+      dbg('sbSync: currentMonth=null, skip syncPhotos');
     }
   } catch (err) {
     console.error('sbSync error:', err);
+    dbg('sbSync: ERROR ' + err.message);
     showToast('同期失敗: ' + (err.message || '通信エラー'));
   }
 }
 
 async function syncPhotosForMonth(ym) {
-  if (!sbClient || !ym) return;
+  dbg('syncPhotos: called ym=' + ym + ' sbClient=' + !!sbClient);
+  if (!sbClient || !ym) { dbg('syncPhotos: early return'); return; }
   try {
     const from = ym + '-01';
     const to   = ym + '-31';
+    dbg('syncPhotos: querying ' + from + ' ~ ' + to);
     const { data, error } = await sbClient.from('entries')
       .select('date,photo')
       .gte('date', from)
       .lte('date', to);
+    dbg('syncPhotos: got data=' + (data ? data.length : 'null') + ' error=' + (error ? error.message : 'none'));
     if (error) throw error;
-    if (!data) { showToast('DEBUG: data=null'); return; }
+    if (!data) { dbg('syncPhotos: data is null'); return; }
     const withPhoto = data.filter(row => row.photo);
-    showToast(`DEBUG: ${data.length}件取得 / 写真${withPhoto.length}件`);
+    dbg('syncPhotos: rows=' + data.length + ' withPhoto=' + withPhoto.length);
     data.forEach(row => { if (row.photo) sbPhotoCache.set(row.date, row.photo); });
+    dbg('syncPhotos: cache size=' + sbPhotoCache.size);
   } catch (err) {
     console.error('syncPhotosForMonth error:', err);
+    dbg('syncPhotos: CATCH ' + err.message);
     showToast('写真の取得に失敗: ' + (err.message || '通信エラー'));
   }
 }
@@ -351,6 +372,7 @@ function initNav() {
       btn.classList.add('active');
       if (target === 'history') {
         renderHistory();
+        dbg('nav history: currentMonth=' + currentMonth + ' sbClient=' + !!sbClient);
         if (currentMonth) syncPhotosForMonth(currentMonth).then(() => renderHistory());
       }
       if (target === 'record' && editingEntry) {
