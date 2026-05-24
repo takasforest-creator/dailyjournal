@@ -224,15 +224,23 @@ async function sbDelete(date) {
 }
 
 async function sbSync() {
-  if (!sbClient) { alert('DEBUG: sbClientがnullです'); return; }
+  const dbg = document.querySelector('#screen-history .header-sub');
+  if (dbg) dbg.textContent = '同期中…';
+  if (!sbClient) {
+    if (dbg) dbg.textContent = 'DBG: sbClient=null';
+    return;
+  }
   try {
     const { data, error } = await sbClient.from('entries')
       .select('date,ts,weight,morning,evening,photo,wake_time,sleep_time,updated_at,user_id')
       .order('date', { ascending: false });
-    if (error) { alert('DEBUG クエリエラー: ' + error.message); throw error; }
+    if (error) {
+      if (dbg) dbg.textContent = 'DBG エラー: ' + error.message;
+      throw error;
+    }
 
     const withPhoto = (data || []).filter(r => r.photo);
-    alert(`DEBUG 同期結果:\n全件: ${(data||[]).length}\n写真あり: ${withPhoto.length}\n最新写真日付: ${withPhoto[0]?.date || 'なし'}`);
+    if (dbg) dbg.textContent = `DBG: ${(data||[]).length}件 写真${withPhoto.length}枚`;
 
     const local   = loadEntries();
     const sbDates = new Set((data || []).map(r => r.date));
@@ -262,7 +270,8 @@ async function sbSync() {
     renderHistory();
   } catch (err) {
     console.error('sbSync error:', err);
-    showToast('同期エラー: ' + (err.message || '通信に失敗しました'));
+    const dbg2 = document.querySelector('#screen-history .header-sub');
+    if (dbg2) dbg2.textContent = 'DBG catch: ' + (err.message || String(err));
   }
 }
 
