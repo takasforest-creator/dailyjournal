@@ -227,7 +227,8 @@ async function sbSync() {
   if (!sbClient) return;
   try {
     const { data, error } = await sbClient.from('entries')
-      .select('*').order('date', { ascending: false });
+      .select('date,ts,weight,morning,evening,photo,wake_time,sleep_time,updated_at,user_id')
+      .order('date', { ascending: false });
     if (error) throw error;
 
     const local   = loadEntries();
@@ -242,8 +243,9 @@ async function sbSync() {
     }
 
     // Supabase のデータをキャッシュに反映
+    let photoCount = 0;
     (data || []).forEach(row => {
-      if (row.photo) sbPhotoCache.set(row.date, row.photo);
+      if (row.photo) { sbPhotoCache.set(row.date, row.photo); photoCount++; }
     });
 
     // localStorage にはメタデータのみ保存（写真なし）
@@ -252,11 +254,11 @@ async function sbSync() {
     const sorted = [...merged.values()].sort((a, b) => b.date.localeCompare(a.date));
     saveEntries(sorted);
 
-    if (document.getElementById('screen-history').classList.contains('active')) {
-      renderHistory();
-    }
+    // 完了後は常に再描画（履歴画面でなくても次回開いた時のため DOM を更新）
+    renderHistory();
   } catch (err) {
     console.error('sbSync error:', err);
+    showToast('同期エラー: ' + (err.message || '通信に失敗しました'));
   }
 }
 
@@ -838,6 +840,18 @@ function importData(file) {
   reader.readAsText(file);
 }
 
+/* ── 手動同期ボタン ── */
+function initSyncButton() {
+  const btn = document.getElementById('btn-sync');
+  btn.addEventListener('click', async () => {
+    btn.textContent = '…';
+    btn.disabled = true;
+    await sbSync();
+    btn.textContent = '↻';
+    btn.disabled = false;
+  });
+}
+
 /* ── バックアップバー初期化 ── */
 function initBackup() {
   document.getElementById('btn-export').addEventListener('click', exportData);
@@ -871,6 +885,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initModal();
   initBackup();
   initViewToggle();
+  initSyncButton();
   initSupabase();
   initAuth();
   checkAuth();

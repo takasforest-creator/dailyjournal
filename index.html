@@ -43,7 +43,7 @@
   <div id="screen-record" class="screen">
     <div class="header">
       <div class="header-sub" id="header-date"></div>
-      <div class="header-title">DAILY JOURNAL <span style="font-size:0.5rem;opacity:0.6">v24</span></div>
+      <div class="header-title">DAILY JOURNAL <span style="font-size:0.5rem;opacity:0.6">v25</span></div>
     </div>
 
     <div class="body-scroll">
@@ -123,7 +123,10 @@
       <div class="header-sub">これまでの記録</div>
       <div class="header-title-row">
         <div class="header-title">HISTORY</div>
-        <button id="btn-view-toggle" class="btn-view-toggle">⊞</button>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button id="btn-sync" class="btn-view-toggle" title="再同期">↻</button>
+          <button id="btn-view-toggle" class="btn-view-toggle">⊞</button>
+        </div>
       </div>
     </div>
 
@@ -193,7 +196,7 @@
   <script src="app.js"></script>
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js?v=24');
+      navigator.serviceWorker.register('/sw.js?v=25');
     }
   </script>
 </body>
