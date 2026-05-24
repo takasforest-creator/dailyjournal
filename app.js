@@ -848,6 +848,7 @@ function importData(file) {
 function initSyncButton() {
   const btn = document.getElementById('btn-sync');
   btn.addEventListener('click', async () => {
+    alert('↻ボタンが押されました');
     btn.textContent = '…';
     btn.disabled = true;
     await sbSync();
