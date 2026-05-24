@@ -231,16 +231,15 @@ async function sbSync() {
     return;
   }
   try {
+    // まずメタデータのみ取得（photo列を除外）
     const { data, error } = await sbClient.from('entries')
-      .select('date,ts,weight,morning,evening,photo,wake_time,sleep_time,updated_at,user_id')
+      .select('date,ts,weight,morning,evening,wake_time,sleep_time,updated_at,user_id')
       .order('date', { ascending: false });
     if (error) {
       if (dbg) dbg.textContent = 'DBG エラー: ' + error.message;
       throw error;
     }
-
-    const withPhoto = (data || []).filter(r => r.photo);
-    if (dbg) dbg.textContent = `DBG: ${(data||[]).length}件 写真${withPhoto.length}枚`;
+    if (dbg) dbg.textContent = `DBG: ${(data||[]).length}件取得`;
 
     const local   = loadEntries();
     const sbDates = new Set((data || []).map(r => r.date));
@@ -253,26 +252,33 @@ async function sbSync() {
       }
     }
 
-    // Supabase のデータをキャッシュに反映
-    let photoCount = 0;
-    (data || []).forEach(row => {
-      if (row.photo) { sbPhotoCache.set(row.date, row.photo); photoCount++; }
-    });
-
-    // localStorage にはメタデータのみ保存（写真なし）
+    // localStorage にはメタデータのみ保存
     const merged = new Map(local.map(e => [e.date, e]));
     (data || []).forEach(row => merged.set(row.date, rowToEntry(row)));
     const sorted = [...merged.values()].sort((a, b) => b.date.localeCompare(a.date));
     saveEntries(sorted);
+    if (dbg) dbg.textContent = 'これまでの記録';
 
-    // 完了後は常に再描画（履歴画面でなくても次回開いた時のため DOM を更新）
-    showToast(`同期完了: ${sorted.length}件 / 写真${photoCount}枚`);
+    // 写真は表示中の月分だけ取得
+    await syncPhotosForMonth(currentMonth || monthKey(todayKey()));
     renderHistory();
   } catch (err) {
     console.error('sbSync error:', err);
     const dbg2 = document.querySelector('#screen-history .header-sub');
     if (dbg2) dbg2.textContent = 'DBG catch: ' + (err.message || String(err));
   }
+}
+
+async function syncPhotosForMonth(ym) {
+  if (!sbClient || !ym) return;
+  const from = ym + '-01';
+  const to   = ym + '-31';
+  const { data, error } = await sbClient.from('entries')
+    .select('date,photo')
+    .gte('date', from)
+    .lte('date', to);
+  if (error || !data) return;
+  data.forEach(row => { if (row.photo) sbPhotoCache.set(row.date, row.photo); });
 }
 
 /* ── ユーティリティ ── */
@@ -575,7 +581,10 @@ function renderHistory() {
     const btn = document.createElement('button');
     btn.className = 'month-chip' + (ym === currentMonth ? ' active' : '');
     btn.textContent = monthLabel(ym);
-    btn.addEventListener('click', () => { currentMonth = ym; renderHistory(); });
+    btn.addEventListener('click', () => {
+      currentMonth = ym;
+      syncPhotosForMonth(ym).then(() => renderHistory());
+    });
     filter.appendChild(btn);
   });
 
