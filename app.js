@@ -255,6 +255,7 @@ async function sbSync() {
     saveEntries(sorted);
 
     // 完了後は常に再描画（履歴画面でなくても次回開いた時のため DOM を更新）
+    showToast(`同期完了: ${sorted.length}件 / 写真${photoCount}枚`);
     renderHistory();
   } catch (err) {
     console.error('sbSync error:', err);
