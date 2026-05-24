@@ -82,7 +82,7 @@ async function checkAuth() {
   }
 
   const { data: { session } } = await sbClient.auth.getSession();
-  if (session) {
+  if (session && !currentUserId) {
     await onLoggedIn(session);
     return;
   }
@@ -93,6 +93,7 @@ function initAuth() {
   function showLoginStep() {
     document.getElementById('login-form-wrap').hidden = false;
     document.getElementById('login-reset-wrap').hidden = true;
+    document.getElementById('login-new-password-wrap').hidden = true;
   }
 
   document.getElementById('btn-login').addEventListener('click', async () => {
@@ -175,18 +176,19 @@ function initAuth() {
 }
 
 function entryToRow(e) {
-  return {
+  const row = {
     date:       e.date,
     ts:         e.ts ? new Date(e.ts).getTime() : null,
     weight:     e.weight ?? null,
     morning:    e.morning  || null,
     evening:    e.evening  || null,
-    photo:      e.photo || null,
     wake_time:  e.wakeTime  || null,
     sleep_time: e.sleepTime || null,
     updated_at: new Date().toISOString(),
     user_id:    currentUserId,
   };
+  if (e.photo !== undefined) row.photo = e.photo || null;
+  return row;
 }
 
 function rowToEntry(row) {
@@ -260,14 +262,20 @@ async function sbSync() {
 
 async function syncPhotosForMonth(ym) {
   if (!sbClient || !ym) return;
-  const from = ym + '-01';
-  const to   = ym + '-31';
-  const { data, error } = await sbClient.from('entries')
-    .select('date,photo')
-    .gte('date', from)
-    .lte('date', to);
-  if (error || !data) return;
-  data.forEach(row => { if (row.photo) sbPhotoCache.set(row.date, row.photo); });
+  try {
+    const from = ym + '-01';
+    const to   = ym + '-31';
+    const { data, error } = await sbClient.from('entries')
+      .select('date,photo')
+      .gte('date', from)
+      .lte('date', to);
+    if (error) throw error;
+    if (!data) return;
+    data.forEach(row => { if (row.photo) sbPhotoCache.set(row.date, row.photo); });
+  } catch (err) {
+    console.error('syncPhotosForMonth error:', err);
+    showToast('写真の取得に失敗: ' + (err.message || '通信エラー'));
+  }
 }
 
 /* ── ユーティリティ ── */
@@ -494,6 +502,7 @@ function initSave() {
     }
 
     saveEntries(entries);
+    const wasEditing = !!editingEntry;
     showToast(editingEntry ? '更新しました！' : '保存しました！');
     editingEntry = null;
     resetForm();
@@ -505,7 +514,9 @@ function initSave() {
       if (isNewCapture && document.getElementById('screen-history').classList.contains('active')) {
         renderHistory();
       }
-      await sbPush({ ...entry, photo: finalPhoto });
+      // 編集で新規撮影なしかつ写真なしの場合は photo を省略して Supabase の既存写真を保持
+      const photoForPush = isNewCapture ? photoBase64 : (wasEditing && !finalPhoto ? undefined : finalPhoto);
+      await sbPush({ ...entry, photo: photoForPush });
     })();
   });
 }
