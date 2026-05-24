@@ -224,12 +224,15 @@ async function sbDelete(date) {
 }
 
 async function sbSync() {
-  if (!sbClient) return;
+  if (!sbClient) { alert('DEBUG: sbClientがnullです'); return; }
   try {
     const { data, error } = await sbClient.from('entries')
       .select('date,ts,weight,morning,evening,photo,wake_time,sleep_time,updated_at,user_id')
       .order('date', { ascending: false });
-    if (error) throw error;
+    if (error) { alert('DEBUG クエリエラー: ' + error.message); throw error; }
+
+    const withPhoto = (data || []).filter(r => r.photo);
+    alert(`DEBUG 同期結果:\n全件: ${(data||[]).length}\n写真あり: ${withPhoto.length}\n最新写真日付: ${withPhoto[0]?.date || 'なし'}`);
 
     const local   = loadEntries();
     const sbDates = new Set((data || []).map(r => r.date));
