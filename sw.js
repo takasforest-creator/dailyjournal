@@ -1,6 +1,6 @@
 'use strict';
 
-const CACHE = 'dailyjournal-v25';
+const CACHE = 'dailyjournal-v26';
 const ASSETS = [
   '/',
   '/index.html',
@@ -28,7 +28,8 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  // 常にネットワーク優先、失敗時のみキャッシュを返す（更新を即座に反映）
+  // アプリ自身のファイルのみキャッシュ（外部API=Supabaseはブラウザに委ねる）
+  if (!e.request.url.startsWith(self.location.origin)) return;
   e.respondWith(
     fetch(e.request)
       .then(res => {

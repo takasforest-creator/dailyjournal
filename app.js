@@ -224,27 +224,20 @@ async function sbDelete(date) {
 }
 
 async function sbSync() {
-  const dbg = document.querySelector('#screen-history .header-sub');
-  if (dbg) dbg.textContent = '同期中…';
-  if (!sbClient) {
-    if (dbg) dbg.textContent = 'DBG: sbClient=null';
-    return;
-  }
+  if (!sbClient) return;
+  const ac = new AbortController();
+  const timer = setTimeout(() => ac.abort(), 15000);
   try {
-    // まずメタデータのみ取得（photo列を除外）
     const { data, error } = await sbClient.from('entries')
       .select('date,ts,weight,morning,evening,wake_time,sleep_time,updated_at,user_id')
-      .order('date', { ascending: false });
-    if (error) {
-      if (dbg) dbg.textContent = 'DBG エラー: ' + error.message;
-      throw error;
-    }
-    if (dbg) dbg.textContent = `DBG: ${(data||[]).length}件取得`;
+      .order('date', { ascending: false })
+      .abortSignal(ac.signal);
+    clearTimeout(timer);
+    if (error) throw error;
 
     const local   = loadEntries();
     const sbDates = new Set((data || []).map(r => r.date));
 
-    // ローカルにあって Supabase にないエントリを同期
     for (const entry of local) {
       if (!sbDates.has(entry.date)) {
         const photo = sbPhotoCache.get(entry.date) || entry.photo || null;
@@ -252,20 +245,17 @@ async function sbSync() {
       }
     }
 
-    // localStorage にはメタデータのみ保存
     const merged = new Map(local.map(e => [e.date, e]));
     (data || []).forEach(row => merged.set(row.date, rowToEntry(row)));
     const sorted = [...merged.values()].sort((a, b) => b.date.localeCompare(a.date));
     saveEntries(sorted);
-    if (dbg) dbg.textContent = 'これまでの記録';
 
-    // 写真は表示中の月分だけ取得
     await syncPhotosForMonth(currentMonth || monthKey(todayKey()));
     renderHistory();
   } catch (err) {
+    clearTimeout(timer);
     console.error('sbSync error:', err);
-    const dbg2 = document.querySelector('#screen-history .header-sub');
-    if (dbg2) dbg2.textContent = 'DBG catch: ' + (err.message || String(err));
+    showToast('同期失敗: ' + (err.name === 'AbortError' ? 'タイムアウト' : err.message));
   }
 }
 
@@ -583,6 +573,7 @@ function renderHistory() {
     btn.textContent = monthLabel(ym);
     btn.addEventListener('click', () => {
       currentMonth = ym;
+      renderHistory();
       syncPhotosForMonth(ym).then(() => renderHistory());
     });
     filter.appendChild(btn);
