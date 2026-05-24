@@ -225,14 +225,10 @@ async function sbDelete(date) {
 
 async function sbSync() {
   if (!sbClient) return;
-  const ac = new AbortController();
-  const timer = setTimeout(() => ac.abort(), 15000);
   try {
     const { data, error } = await sbClient.from('entries')
       .select('date,ts,weight,morning,evening,wake_time,sleep_time,updated_at,user_id')
-      .order('date', { ascending: false })
-      .abortSignal(ac.signal);
-    clearTimeout(timer);
+      .order('date', { ascending: false });
     if (error) throw error;
 
     const local   = loadEntries();
@@ -250,12 +246,15 @@ async function sbSync() {
     const sorted = [...merged.values()].sort((a, b) => b.date.localeCompare(a.date));
     saveEntries(sorted);
 
-    await syncPhotosForMonth(currentMonth || monthKey(todayKey()));
+    // renderHistory() が currentMonth を確定させてから写真を取得する
     renderHistory();
+    if (currentMonth) {
+      await syncPhotosForMonth(currentMonth);
+      renderHistory();
+    }
   } catch (err) {
-    clearTimeout(timer);
     console.error('sbSync error:', err);
-    showToast('同期失敗: ' + (err.name === 'AbortError' ? 'タイムアウト' : err.message));
+    showToast('同期失敗: ' + (err.message || '通信エラー'));
   }
 }
 
@@ -340,7 +339,10 @@ function initNav() {
       document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
       document.getElementById('screen-' + target).classList.add('active');
       btn.classList.add('active');
-      if (target === 'history') renderHistory();
+      if (target === 'history') {
+        renderHistory();
+        if (currentMonth) syncPhotosForMonth(currentMonth).then(() => renderHistory());
+      }
       if (target === 'record' && editingEntry) {
         // 編集中にナビで記録画面に戻った場合はキャンセル
         editingEntry = null;
@@ -857,7 +859,6 @@ function importData(file) {
 function initSyncButton() {
   const btn = document.getElementById('btn-sync');
   btn.addEventListener('click', async () => {
-    alert('↻ボタンが押されました');
     btn.textContent = '…';
     btn.disabled = true;
     await sbSync();
