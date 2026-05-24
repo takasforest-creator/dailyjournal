@@ -270,7 +270,9 @@ async function syncPhotosForMonth(ym) {
       .gte('date', from)
       .lte('date', to);
     if (error) throw error;
-    if (!data) return;
+    if (!data) { showToast('DEBUG: data=null'); return; }
+    const withPhoto = data.filter(row => row.photo);
+    showToast(`DEBUG: ${data.length}件取得 / 写真${withPhoto.length}件`);
     data.forEach(row => { if (row.photo) sbPhotoCache.set(row.date, row.photo); });
   } catch (err) {
     console.error('syncPhotosForMonth error:', err);
