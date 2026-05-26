@@ -281,7 +281,9 @@ async function syncPhotosForMonth(ym) {
   if (!sbClient || !ym) { dbg('syncPhotos: early return'); return; }
   try {
     const from = ym + '-01';
-    const to   = ym + '-31';
+    const [y, m] = ym.split('-').map(Number);
+    const lastDay = new Date(y, m, 0).getDate();
+    const to = ym + '-' + String(lastDay).padStart(2, '0');
     dbg('syncPhotos: querying ' + from + ' ~ ' + to);
     const { data, error } = await sbClient.from('entries')
       .select('date,photo')
@@ -631,6 +633,14 @@ function renderHistory() {
 
 function renderTimeline(filtered, entries) {
   const list = document.getElementById('history-list');
+  const photoCt = filtered.filter(e => getPhoto(e)).length;
+  dbg('renderTimeline: entries=' + filtered.length + ' withPhoto=' + photoCt + ' cache=' + sbPhotoCache.size);
+  if (sbPhotoCache.size > 0) {
+    const cacheKey0 = [...sbPhotoCache.keys()][0];
+    const cacheVal0 = sbPhotoCache.get(cacheKey0) || '';
+    dbg('cacheKey0=' + cacheKey0 + ' photoPrefix=' + cacheVal0.slice(0, 30));
+    if (filtered.length > 0) dbg('entryDate0=' + filtered[0].date);
+  }
 
   filtered.forEach((entry, i) => {
     const d = new Date(entry.date + 'T00:00:00');
