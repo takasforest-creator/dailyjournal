@@ -284,11 +284,35 @@ async function syncPhotosForMonth(ym) {
     const [y, m] = ym.split('-').map(Number);
     const lastDay = new Date(y, m, 0).getDate();
     const to = ym + '-' + String(lastDay).padStart(2, '0');
+
+    // セッション確認
+    const { data: { session } } = await sbClient.auth.getSession();
+    dbg('syncPhotos: hasSession=' + !!session);
+
+    // テスト：写真1件だけ取得（5秒タイムアウト）
+    const ctrl1 = new AbortController();
+    const t1 = setTimeout(() => { ctrl1.abort(); dbg('syncPhotos: 1件テスト TIMEOUT'); }, 5000);
+    const testR = await sbClient.from('entries')
+      .select('date,photo')
+      .not('photo', 'is', null)
+      .limit(1)
+      .abortSignal(ctrl1.signal);
+    clearTimeout(t1);
+    const pLen = testR.data?.[0]?.photo?.length || 0;
+    dbg('syncPhotos: 1件テスト rows=' + (testR.data?.length ?? 'null') + ' photoLen=' + pLen + ' err=' + (testR.error?.message || 'none'));
+
     dbg('syncPhotos: querying ' + from + ' ~ ' + to);
+
+    // 本クエリ（15秒タイムアウト）
+    const ctrl2 = new AbortController();
+    const t2 = setTimeout(() => { ctrl2.abort(); dbg('syncPhotos: 本クエリ TIMEOUT'); }, 15000);
     const { data, error } = await sbClient.from('entries')
       .select('date,photo')
       .gte('date', from)
-      .lte('date', to);
+      .lte('date', to)
+      .abortSignal(ctrl2.signal);
+    clearTimeout(t2);
+
     dbg('syncPhotos: got data=' + (data ? data.length : 'null') + ' error=' + (error ? error.message : 'none'));
     if (error) throw error;
     if (!data) { dbg('syncPhotos: data is null'); return; }
