@@ -674,7 +674,7 @@ function renderTimeline(filtered, entries) {
 
     const photo = getPhoto(entry);
     const thumbInner = photo
-      ? `<img class="timeline-thumb" src="${photo}" alt="写真" />`
+      ? `<img class="timeline-thumb" alt="写真" />`
       : `<div class="timeline-thumb-placeholder">🙂</div>`;
     const weightLabel = entry.weight != null ? `${entry.weight.toFixed(1)} kg` : '';
     const thumbHtml = `<div class="timeline-photo-col">${thumbInner}${weightLabel ? `<div class="timeline-thumb-weight">${weightLabel}</div>` : ''}</div>`;
@@ -747,6 +747,18 @@ function renderTimeline(filtered, entries) {
       }
     });
 
+    // data URL を innerHTML に埋め込むと iOS Safari でブロックされるため直接代入
+    if (photo) {
+      const img = li.querySelector('img.timeline-thumb');
+      if (img) {
+        if (i === 0) {
+          img.onload  = () => dbg('img[0] loaded ✓');
+          img.onerror = () => dbg('img[0] ERROR ✗');
+        }
+        img.src = photo;
+      }
+    }
+
     li.addEventListener('click', () => { if (!dragged) openDetail(entry, entries); });
     list.appendChild(li);
   });
@@ -761,7 +773,9 @@ function renderPhotoGrid(filtered, entries) {
     const dateLabel = `${d.getMonth()+1}/${d.getDate()}`;
     const tilePhoto = getPhoto(entry);
     if (tilePhoto) {
-      tile.innerHTML = `<img src="${tilePhoto}" alt="${entry.date}" /><div class="photo-tile-date">${dateLabel}</div>`;
+      tile.innerHTML = `<img alt="${entry.date}" /><div class="photo-tile-date">${dateLabel}</div>`;
+      const img = tile.querySelector('img');
+      if (img) img.src = tilePhoto;
     } else {
       tile.innerHTML = `<div class="photo-tile-placeholder">🙂</div><div class="photo-tile-date">${dateLabel}</div>`;
     }
