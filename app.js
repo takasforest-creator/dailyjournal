@@ -32,8 +32,29 @@ function getPhoto(entry) {
 
 function initSupabase() {
   if (window.supabase) {
-    sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+      global: {
+        fetch: (url, options = {}) => {
+          const controller = new AbortController();
+          const label = String(url).replace(SUPABASE_URL, '').split('?')[0].slice(0, 40);
+          const tid = setTimeout(() => {
+            dbg('fetch TIMEOUT: ' + label);
+            controller.abort();
+          }, 12000);
+          const signal = options.signal
+            ? anySignal([options.signal, controller.signal])
+            : controller.signal;
+          return fetch(url, { ...options, signal }).finally(() => clearTimeout(tid));
+        }
+      }
+    });
   }
+}
+
+function anySignal(signals) {
+  const ctrl = new AbortController();
+  signals.forEach(s => s?.addEventListener('abort', () => ctrl.abort(), { once: true }));
+  return ctrl.signal;
 }
 
 function showLoginScreen() {
@@ -66,6 +87,20 @@ async function onLoggedIn(session) {
   showApp();
   await migrateUserIds();
   sbSync();
+}
+
+function handleAuthError(err) {
+  const msg = err?.message || '';
+  if (msg.includes('JWT') || msg.includes('token') || msg.includes('401') || err?.status === 401) {
+    dbg('authError: session expired, signing out');
+    sbClient.auth.signOut().finally(() => {
+      currentUserId = null;
+      showLoginScreen();
+      showToast('セッションが期限切れです。再ログインしてください。');
+    });
+    return true;
+  }
+  return false;
 }
 
 async function checkAuth() {
@@ -272,58 +307,32 @@ async function sbSync() {
   } catch (err) {
     console.error('sbSync error:', err);
     dbg('sbSync: ERROR ' + err.message);
-    showToast('同期失敗: ' + (err.message || '通信エラー'));
+    if (!handleAuthError(err)) showToast('同期失敗: ' + (err.message || '通信エラー'));
   }
 }
 
 async function syncPhotosForMonth(ym) {
-  dbg('syncPhotos: called ym=' + ym + ' sbClient=' + !!sbClient);
-  if (!sbClient || !ym) { dbg('syncPhotos: early return'); return; }
+  dbg('syncPhotos: called ym=' + ym);
+  if (!sbClient || !ym) return;
   try {
     const from = ym + '-01';
     const [y, m] = ym.split('-').map(Number);
     const lastDay = new Date(y, m, 0).getDate();
     const to = ym + '-' + String(lastDay).padStart(2, '0');
-
-    // セッション確認
-    const { data: { session } } = await sbClient.auth.getSession();
-    dbg('syncPhotos: hasSession=' + !!session);
-
-    // テスト：写真1件だけ取得（5秒タイムアウト）
-    const ctrl1 = new AbortController();
-    const t1 = setTimeout(() => { ctrl1.abort(); dbg('syncPhotos: 1件テスト TIMEOUT'); }, 5000);
-    const testR = await sbClient.from('entries')
-      .select('date,photo')
-      .not('photo', 'is', null)
-      .limit(1)
-      .abortSignal(ctrl1.signal);
-    clearTimeout(t1);
-    const pLen = testR.data?.[0]?.photo?.length || 0;
-    dbg('syncPhotos: 1件テスト rows=' + (testR.data?.length ?? 'null') + ' photoLen=' + pLen + ' err=' + (testR.error?.message || 'none'));
-
     dbg('syncPhotos: querying ' + from + ' ~ ' + to);
-
-    // 本クエリ（15秒タイムアウト）
-    const ctrl2 = new AbortController();
-    const t2 = setTimeout(() => { ctrl2.abort(); dbg('syncPhotos: 本クエリ TIMEOUT'); }, 15000);
     const { data, error } = await sbClient.from('entries')
       .select('date,photo')
       .gte('date', from)
-      .lte('date', to)
-      .abortSignal(ctrl2.signal);
-    clearTimeout(t2);
-
-    dbg('syncPhotos: got data=' + (data ? data.length : 'null') + ' error=' + (error ? error.message : 'none'));
+      .lte('date', to);
+    dbg('syncPhotos: rows=' + (data?.length ?? 'null') + ' err=' + (error?.message || 'none'));
     if (error) throw error;
-    if (!data) { dbg('syncPhotos: data is null'); return; }
-    const withPhoto = data.filter(row => row.photo);
-    dbg('syncPhotos: rows=' + data.length + ' withPhoto=' + withPhoto.length);
+    if (!data) return;
     data.forEach(row => { if (row.photo) sbPhotoCache.set(row.date, row.photo); });
-    dbg('syncPhotos: cache size=' + sbPhotoCache.size);
+    dbg('syncPhotos: cache=' + sbPhotoCache.size);
   } catch (err) {
     console.error('syncPhotosForMonth error:', err);
     dbg('syncPhotos: CATCH ' + err.message);
-    showToast('写真の取得に失敗: ' + (err.message || '通信エラー'));
+    if (!handleAuthError(err)) showToast('写真の取得に失敗: ' + (err.message || '通信エラー'));
   }
 }
 
