@@ -43,7 +43,7 @@
   <div id="screen-record" class="screen">
     <div class="header">
       <div class="header-sub" id="header-date"></div>
-      <div class="header-title">DAILY JOURNAL <span style="font-size:0.5rem;opacity:0.6">v35</span></div>
+      <div class="header-title">DAILY JOURNAL <span style="font-size:0.5rem;opacity:0.6">v36</span></div>
     </div>
 
     <div class="body-scroll">
@@ -149,13 +149,6 @@
   <!-- トースト（全画面共通） -->
   <div id="save-toast" class="toast" hidden></div>
 
-  <!-- デバッグログ（調査用） -->
-  <div id="debug-log" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);color:#0f0;font-size:11px;padding:8px;z-index:99999;overflow-y:auto;white-space:pre-wrap;font-family:monospace">
-    <button onclick="document.getElementById('debug-log').style.display='none'" style="float:right;background:#f00;color:#fff;border:none;padding:4px 10px;font-size:14px">✕</button>
-    <strong>DEBUG LOG</strong>
-    <div id="debug-lines"></div>
-  </div>
-
   <!-- ボトムナビ -->
   <nav class="bottom-nav" hidden>
     <button class="nav-item active" data-screen="record">
@@ -206,7 +199,7 @@
   <script src="app.js"></script>
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js?v=35');
+      navigator.serviceWorker.register('/sw.js?v=36');
     }
   </script>
 </body>

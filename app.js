@@ -17,14 +17,6 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 let sbClient = null;
 let sbPhotoCache = new Map(); // date -> base64（localStorage には保存しない）
 
-function dbg(msg) {
-  const el = document.getElementById('debug-lines');
-  if (!el) return;
-  document.getElementById('debug-log').style.display = 'block';
-  const line = document.createElement('div');
-  line.textContent = new Date().toISOString().slice(11,19) + ' ' + msg;
-  el.prepend(line);
-}
 
 function getPhoto(entry) {
   return sbPhotoCache.get(entry.date) || entry.photo || null;
@@ -36,11 +28,7 @@ function initSupabase() {
       global: {
         fetch: (url, options = {}) => {
           const controller = new AbortController();
-          const label = String(url).replace(SUPABASE_URL, '').split('?')[0].slice(0, 40);
-          const tid = setTimeout(() => {
-            dbg('fetch TIMEOUT: ' + label);
-            controller.abort();
-          }, 12000);
+          const tid = setTimeout(() => controller.abort(), 12000);
           const signal = options.signal
             ? anySignal([options.signal, controller.signal])
             : controller.signal;
@@ -92,7 +80,6 @@ async function onLoggedIn(session) {
 function handleAuthError(err) {
   const msg = err?.message || '';
   if (msg.includes('JWT') || msg.includes('token') || msg.includes('401') || err?.status === 401) {
-    dbg('authError: session expired, signing out');
     sbClient.auth.signOut().finally(() => {
       currentUserId = null;
       showLoginScreen();
@@ -270,14 +257,12 @@ async function sbDelete(date) {
 }
 
 async function sbSync() {
-  if (!sbClient) { dbg('sbSync: sbClient=null, skip'); return; }
-  dbg('sbSync: start');
+  if (!sbClient) return;
   try {
     const { data, error } = await sbClient.from('entries')
       .select('date,ts,weight,morning,evening,wake_time,sleep_time,updated_at,user_id')
       .order('date', { ascending: false });
     if (error) throw error;
-    dbg('sbSync: entries=' + (data ? data.length : 'null'));
 
     const local   = loadEntries();
     const sbDates = new Set((data || []).map(r => r.date));
@@ -293,26 +278,20 @@ async function sbSync() {
     (data || []).forEach(row => merged.set(row.date, rowToEntry(row)));
     const sorted = [...merged.values()].sort((a, b) => b.date.localeCompare(a.date));
     saveEntries(sorted);
-    dbg('sbSync: saved ' + sorted.length + ' entries');
 
     // renderHistory() が currentMonth を確定させてから写真を取得する
     renderHistory();
-    dbg('sbSync: currentMonth=' + currentMonth);
     if (currentMonth) {
       await syncPhotosForMonth(currentMonth);
       renderHistory();
-    } else {
-      dbg('sbSync: currentMonth=null, skip syncPhotos');
     }
   } catch (err) {
     console.error('sbSync error:', err);
-    dbg('sbSync: ERROR ' + err.message);
     if (!handleAuthError(err)) showToast('同期失敗: ' + (err.message || '通信エラー'));
   }
 }
 
 async function syncPhotosForMonth(ym) {
-  dbg('syncPhotos: called ym=' + ym);
   if (!sbClient || !ym) return;
   try {
     const from = ym + '-01';
@@ -326,13 +305,11 @@ async function syncPhotosForMonth(ym) {
       const raw = localStorage.getItem('sb-nraanwywbbmdwpcxwgop-auth-token');
       token = raw ? (JSON.parse(raw)?.access_token || '') : '';
     } catch {}
-    if (!token) { dbg('syncPhotos: no token in storage'); return; }
+    if (!token) return;
 
-    dbg('syncPhotos: querying ' + from + ' ~ ' + to);
     const url = `${SUPABASE_URL}/rest/v1/entries?select=date,photo&date=gte.${from}&date=lte.${to}`;
-
     const ctrl = new AbortController();
-    const tid = setTimeout(() => { dbg('syncPhotos: TIMEOUT'); ctrl.abort(); }, 12000);
+    const tid = setTimeout(() => ctrl.abort(), 12000);
     let resp;
     try {
       resp = await fetch(url, {
@@ -341,20 +318,15 @@ async function syncPhotosForMonth(ym) {
       });
     } finally { clearTimeout(tid); }
 
-    dbg('syncPhotos: status=' + resp.status);
     if (resp.status === 401) {
       showToast('セッション期限切れ。再ログインしてください。');
       return;
     }
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     const data = await resp.json();
-    const withPhoto = data.filter(r => r.photo).length;
-    dbg('syncPhotos: rows=' + data.length + ' withPhoto=' + withPhoto);
     data.forEach(row => { if (row.photo) sbPhotoCache.set(row.date, row.photo); });
-    dbg('syncPhotos: cache=' + sbPhotoCache.size);
   } catch (err) {
     console.error('syncPhotosForMonth error:', err);
-    dbg('syncPhotos: CATCH ' + err.message);
     if (!handleAuthError(err)) showToast('写真の取得に失敗: ' + (err.message || '通信エラー'));
   }
 }
@@ -430,7 +402,6 @@ function initNav() {
       btn.classList.add('active');
       if (target === 'history') {
         renderHistory();
-        dbg('nav history: currentMonth=' + currentMonth + ' sbClient=' + !!sbClient);
         if (currentMonth) syncPhotosForMonth(currentMonth).then(() => renderHistory());
       }
       if (target === 'record' && editingEntry) {
@@ -689,14 +660,6 @@ function renderHistory() {
 
 function renderTimeline(filtered, entries) {
   const list = document.getElementById('history-list');
-  const photoCt = filtered.filter(e => getPhoto(e)).length;
-  dbg('renderTimeline: entries=' + filtered.length + ' withPhoto=' + photoCt + ' cache=' + sbPhotoCache.size);
-  if (sbPhotoCache.size > 0) {
-    const cacheKey0 = [...sbPhotoCache.keys()][0];
-    const cacheVal0 = sbPhotoCache.get(cacheKey0) || '';
-    dbg('cacheKey0=' + cacheKey0 + ' photoPrefix=' + cacheVal0.slice(0, 30));
-    if (filtered.length > 0) dbg('entryDate0=' + filtered[0].date);
-  }
 
   filtered.forEach((entry, i) => {
     const d = new Date(entry.date + 'T00:00:00');
@@ -782,13 +745,7 @@ function renderTimeline(filtered, entries) {
     // data URL を innerHTML に埋め込むと iOS Safari でブロックされるため直接代入
     if (photo) {
       const img = li.querySelector('img.timeline-thumb');
-      if (img) {
-        if (i === 0) {
-          img.onload  = () => dbg('img[0] loaded ✓');
-          img.onerror = () => dbg('img[0] ERROR ✗');
-        }
-        img.src = photo;
-      }
+      if (img) img.src = photo;
     }
 
     li.addEventListener('click', () => { if (!dragged) openDetail(entry, entries); });
