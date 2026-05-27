@@ -319,14 +319,37 @@ async function syncPhotosForMonth(ym) {
     const [y, m] = ym.split('-').map(Number);
     const lastDay = new Date(y, m, 0).getDate();
     const to = ym + '-' + String(lastDay).padStart(2, '0');
+
+    // Supabase JS クライアントを介さず raw fetch で取得（トークンリフレッシュのハングを回避）
+    let token = '';
+    try {
+      const raw = localStorage.getItem('sb-nraanwywbbmdwpcxwgop-auth-token');
+      token = raw ? (JSON.parse(raw)?.access_token || '') : '';
+    } catch {}
+    if (!token) { dbg('syncPhotos: no token in storage'); return; }
+
     dbg('syncPhotos: querying ' + from + ' ~ ' + to);
-    const { data, error } = await sbClient.from('entries')
-      .select('date,photo')
-      .gte('date', from)
-      .lte('date', to);
-    dbg('syncPhotos: rows=' + (data?.length ?? 'null') + ' err=' + (error?.message || 'none'));
-    if (error) throw error;
-    if (!data) return;
+    const url = `${SUPABASE_URL}/rest/v1/entries?select=date,photo&date=gte.${from}&date=lte.${to}`;
+
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => { dbg('syncPhotos: TIMEOUT'); ctrl.abort(); }, 12000);
+    let resp;
+    try {
+      resp = await fetch(url, {
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + token },
+        signal: ctrl.signal,
+      });
+    } finally { clearTimeout(tid); }
+
+    dbg('syncPhotos: status=' + resp.status);
+    if (resp.status === 401) {
+      showToast('セッション期限切れ。再ログインしてください。');
+      return;
+    }
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const data = await resp.json();
+    const withPhoto = data.filter(r => r.photo).length;
+    dbg('syncPhotos: rows=' + data.length + ' withPhoto=' + withPhoto);
     data.forEach(row => { if (row.photo) sbPhotoCache.set(row.date, row.photo); });
     dbg('syncPhotos: cache=' + sbPhotoCache.size);
   } catch (err) {
@@ -969,6 +992,13 @@ function initBackup() {
   });
   fileInput.addEventListener('change', () => {
     if (fileInput.files[0]) importData(fileInput.files[0]);
+  });
+  document.getElementById('btn-logout').addEventListener('click', async () => {
+    if (!confirm('ログアウトしますか？')) return;
+    if (sbClient) await sbClient.auth.signOut().catch(() => {});
+    currentUserId = null;
+    sbPhotoCache.clear();
+    showLoginScreen();
   });
 }
 

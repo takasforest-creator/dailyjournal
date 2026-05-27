@@ -43,7 +43,7 @@
   <div id="screen-record" class="screen">
     <div class="header">
       <div class="header-sub" id="header-date"></div>
-      <div class="header-title">DAILY JOURNAL <span style="font-size:0.5rem;opacity:0.6">v34</span></div>
+      <div class="header-title">DAILY JOURNAL <span style="font-size:0.5rem;opacity:0.6">v35</span></div>
     </div>
 
     <div class="body-scroll">
@@ -134,6 +134,7 @@
         <button id="btn-export" class="btn-backup">📤 バックアップ</button>
         <button id="btn-import" class="btn-backup">📥 復元</button>
         <input id="import-file" type="file" accept=".json" hidden />
+        <button id="btn-logout" class="btn-backup">🚪 ログアウト</button>
       </div>
       <div id="month-filter" class="month-filter"></div>
 
@@ -205,7 +206,7 @@
   <script src="app.js"></script>
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js?v=34');
+      navigator.serviceWorker.register('/sw.js?v=35');
     }
   </script>
 </body>
