@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>余白縮小案</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:#e8e0d8;font-family:'Helvetica Neue',Arial,'Hiragino Kaku Gothic ProN',sans-serif;padding:32px 20px;display:flex;gap:28px;justify-content:center;flex-wrap:wrap;align-items:flex-start}
+
+:root{
+  --primary:#ff7043;--primary-light:#ff8a65;--primary-pale:#fff3ee;
+  --bg:#fff9f5;--card:#ffffff;--text:#2d1a0e;--muted:#a08070;
+  --border:#f0e0d6;--radius:18px;--shadow:0 2px 14px rgba(255,112,67,0.10);
+}
+
+.phone-label{text-align:center;font-size:0.85rem;font-weight:700;color:#555;margin-bottom:10px}
+.phone{width:375px;background:var(--bg);border-radius:40px;box-shadow:0 20px 60px rgba(0,0,0,0.30),0 0 0 8px #1a1a1a,0 0 0 10px #333;overflow:hidden;flex-shrink:0}
+
+.header{background:linear-gradient(135deg,var(--primary),var(--primary-light));color:#fff;padding:20px 20px 28px}
+.header-sub{font-size:0.75rem;opacity:0.8;letter-spacing:0.1em;margin-bottom:4px}
+.header-title-row{display:flex;align-items:center;justify-content:space-between}
+.header-title{font-size:1.5rem;font-weight:800;letter-spacing:0.06em}
+.btn-toggle{background:rgba(255,255,255,0.2);border:none;border-radius:8px;color:#fff;font-size:1.2rem;width:36px;height:36px;display:flex;align-items:center;justify-content:center}
+
+.month-filter{display:flex;gap:8px;padding:14px 14px 10px;overflow-x:auto;scrollbar-width:none;background:var(--bg);margin-top:-12px;border-radius:20px 20px 0 0}
+.month-chip{flex-shrink:0;padding:6px 16px;border-radius:50px;border:none;background:var(--card);color:var(--muted);font-size:0.82rem;font-weight:600;box-shadow:0 1px 6px rgba(0,0,0,0.07)}
+.month-chip.active{background:var(--primary);color:#fff}
+
+.history-list{list-style:none;padding:0 14px 80px;background:var(--bg)}
+.timeline-arrow{display:flex;align-items:center;padding-right:8px;color:var(--border);font-size:1rem;flex-shrink:0}
+.swipe-container{flex:1;border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+.timeline-card{width:100%;background:var(--card);display:flex;align-items:stretch}
+
+/* info共通 */
+.tl-row1{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.tl-weight{font-size:0.78rem;font-weight:700;color:var(--primary);white-space:nowrap}
+.tl-time{font-size:0.75rem;color:var(--muted);white-space:nowrap}
+.tl-reading{display:flex;align-items:center;gap:4px;font-size:0.73rem;color:#8060a0;overflow:hidden}
+.tl-reading-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.tl-reading-time{flex-shrink:0;background:#f0e8fa;color:#8060a0;border-radius:50px;padding:1px 7px;font-size:0.68rem;font-weight:700}
+.tl-comment{font-size:0.73rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.photo-fill{background:linear-gradient(135deg,#ffd6c0,#ffb090);display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex:1}
+.photo-placeholder{background:var(--primary-pale);display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex:1}
+
+.bottom-nav{position:sticky;bottom:0;background:var(--card);border-top:1px solid var(--border);display:flex;height:60px}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:none;background:transparent;color:#ccc}
+.nav-item.active{color:var(--primary)}
+.nav-icon{font-size:1.4rem}
+.nav-label{font-size:0.65rem;font-weight:600}
+
+/* ━━━ 現在 ━━━ */
+.cur .history-item{display:flex;margin-bottom:13px;cursor:pointer}
+.cur .history-item:last-child{margin-bottom:0}
+.cur .timeline-date{width:40px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;padding-top:6px}
+.cur .timeline-day{font-size:1.05rem;font-weight:800;color:var(--primary);line-height:1}
+.cur .timeline-weekday{font-size:0.62rem;color:var(--muted);margin-top:2px}
+.cur .timeline-line{width:2px;background:var(--border);flex:1;margin-top:6px;min-height:16px}
+.cur .swipe-container{margin-left:8px}
+.cur .photo-col{width:80px;flex-shrink:0;display:flex;flex-direction:column}
+.cur .photo-col .photo-fill,
+.cur .photo-col .photo-placeholder{min-height:64px;width:80px}
+.cur .timeline-info{flex:1;padding:9px 6px 9px 12px;display:flex;flex-direction:column;gap:3px;min-width:0}
+
+/* ━━━ 余白縮小 ━━━ */
+.tight .history-item{display:flex;margin-bottom:7px;cursor:pointer}
+.tight .history-item:last-child{margin-bottom:0}
+.tight .timeline-date{width:34px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;padding-top:4px}
+.tight .timeline-day{font-size:0.95rem;font-weight:800;color:var(--primary);line-height:1}
+.tight .timeline-weekday{font-size:0.58rem;color:var(--muted);margin-top:1px}
+.tight .timeline-line{width:2px;background:var(--border);flex:1;margin-top:5px;min-height:12px}
+.tight .swipe-container{margin-left:6px}
+.tight .photo-col{width:72px;flex-shrink:0;display:flex;flex-direction:column}
+.tight .photo-col .photo-fill,
+.tight .photo-col .photo-placeholder{min-height:52px;width:72px}
+.tight .timeline-info{flex:1;padding:7px 5px 7px 10px;display:flex;flex-direction:column;gap:2px;min-width:0}
+</style>
+</head>
+<body>
+
+<!-- 現在 -->
+<div>
+<p class="phone-label">現在</p>
+<div class="phone">
+  <div class="header">
+    <div class="header-sub">これまでの記録</div>
+    <div class="header-title-row">
+      <div class="header-title">HISTORY</div>
+      <div style="display:flex;gap:8px"><button class="btn-toggle">⊞</button><button class="btn-toggle">⋯</button></div>
+    </div>
+  </div>
+  <div class="month-filter">
+    <button class="month-chip active">2026年5月</button>
+    <button class="month-chip">2026年4月</button>
+    <button class="month-chip">2026年3月</button>
+  </div>
+  <ul class="history-list cur">
+    <li class="history-item">
+      <div class="timeline-date"><div class="timeline-day">30</div><div class="timeline-weekday">金</div><div class="timeline-line"></div></div>
+      <div class="swipe-container"><div class="timeline-card">
+        <div class="photo-col"><div class="photo-fill">🤳</div></div>
+        <div class="timeline-info">
+          <div class="tl-row1"><span class="tl-weight">65.2kg</span><span class="tl-time">⏰ 7:00</span><span class="tl-time">🛏 23:30</span></div>
+          <div class="tl-reading"><span>📚</span><span class="tl-reading-title">ノルウェイの森</span><span class="tl-reading-time">⏱ 45分</span></div>
+          <div class="tl-comment">🌅 今日も清々しい朝だ</div>
+          <div class="tl-comment">🌙 充実した一日だった</div>
+        </div>
+        <div class="timeline-arrow">›</div>
+      </div></div>
+    </li>
+    <li class="history-item">
+      <div class="timeline-date"><div class="timeline-day">29</div><div class="timeline-weekday">木</div><div class="timeline-line"></div></div>
+      <div class="swipe-container"><div class="timeline-card">
+        <div class="photo-col"><div class="photo-placeholder">🙂</div></div>
+        <div class="timeline-info">
+          <div class="tl-row1"><span class="tl-weight">65.5kg</span><span class="tl-time">⏰ 7:15</span><span class="tl-time">🛏 24:00</span></div>
+          <div class="tl-reading"><span>📚</span><span class="tl-reading-title">騎士団長殺し 第一部</span><span class="tl-reading-time">⏱ 30分</span></div>
+          <div class="tl-comment">🌅 少し眠い朝</div>
+        </div>
+        <div class="timeline-arrow">›</div>
+      </div></div>
+    </li>
+    <li class="history-item">
+      <div class="timeline-date"><div class="timeline-day">28</div><div class="timeline-weekday">水</div><div class="timeline-line"></div></div>
+      <div class="swipe-container"><div class="timeline-card">
+        <div class="photo-col"><div class="photo-fill">🤳</div></div>
+        <div class="timeline-info">
+          <div class="tl-row1"><span class="tl-weight">65.8kg</span><span class="tl-time">⏰ 6:45</span></div>
+          <div class="tl-comment">🌅 早起き成功！</div>
+          <div class="tl-comment">🌙 読書できなかった</div>
+        </div>
+        <div class="timeline-arrow">›</div>
+      </div></div>
+    </li>
+    <li class="history-item">
+      <div class="timeline-date"><div class="timeline-day">27</div><div class="timeline-weekday">火</div><div class="timeline-line"></div></div>
+      <div class="swipe-container"><div class="timeline-card">
+        <div class="photo-col"><div class="photo-placeholder">🙂</div></div>
+        <div class="timeline-info">
+          <div class="tl-row1"><span class="tl-weight">66.0kg</span><span class="tl-time">⏰ 7:30</span><span class="tl-time">🛏 23:00</span></div>
+          <div class="tl-reading"><span>📚</span><span class="tl-reading-title">海辺のカフカ</span><span class="tl-reading-time">⏱ 1時間</span></div>
+        </div>
+        <div class="timeline-arrow">›</div>
+      </div></div>
+    </li>
+    <li class="history-item">
+      <div class="timeline-date"><div class="timeline-day">26</div><div class="timeline-weekday">月</div></div>
+      <div class="swipe-container"><div class="timeline-card">
+        <div class="photo-col"><div class="photo-fill">🤳</div></div>
+        <div class="timeline-info">
+          <div class="tl-row1"><span class="tl-weight">65.9kg</span><span class="tl-time">⏰ 6:30</span><span class="tl-time">🛏 22:45</span></div>
+          <div class="tl-reading"><span>📚</span><span class="tl-reading-title">1Q84</span><span class="tl-reading-time">⏱ 20分</span></div>
+          <div class="tl-comment">🌅 月曜も元気にスタート</div>
+          <div class="tl-comment">🌙 疲れたけど充実</div>
+        </div>
+        <div class="timeline-arrow">›</div>
+      </div></div>
+    </li>
+  </ul>
+  <div class="bottom-nav">
+    <button class="nav-item"><span class="nav-icon">📝</span><span class="nav-label">記録</span></button>
+    <button class="nav-item active"><span class="nav-icon">📖</span><span class="nav-label">履歴</span></button>
+  </div>
+</div>
+</div>
+
+<!-- 余白縮小 -->
+<div>
+<p class="phone-label">余白縮小案</p>
+<div class="phone">
+  <div class="header">
+    <div class="header-sub">これまでの記録</div>
+    <div class="header-title-row">
+      <div class="header-title">HISTORY</div>
+      <div style="display:flex;gap:8px"><button class="btn-toggle">⊞</button><button class="btn-toggle">⋯</button></div>
+    </div>
+  </div>
+  <div class="month-filter">
+    <button class="month-chip active">2026年5月</button>
+    <button class="month-chip">2026年4月</button>
+    <button class="month-chip">2026年3月</button>
+  </div>
+  <ul class="history-list tight">
+    <li class="history-item">
+      <div class="timeline-date"><div class="timeline-day">30</div><div class="timeline-weekday">金</div><div class="timeline-line"></div></div>
+      <div class="swipe-container"><div class="timeline-card">
+        <div class="photo-col"><div class="photo-fill">🤳</div></div>
+        <div class="timeline-info">
+          <div class="tl-row1"><span class="tl-weight">65.2kg</span><span class="tl-time">⏰ 7:00</span><span class="tl-time">🛏 23:30</span></div>
+          <div class="tl-reading"><span>📚</span><span class="tl-reading-title">ノルウェイの森</span><span class="tl-reading-time">⏱ 45分</span></div>
+          <div class="tl-comment">🌅 今日も清々しい朝だ</div>
+          <div class="tl-comment">🌙 充実した一日だった</div>
+        </div>
+        <div class="timeline-arrow">›</div>
+      </div></div>
+    </li>
+    <li class="history-item">
+      <div class="timeline-date"><div class="timeline-day">29</div><div class="timeline-weekday">木</div><div class="timeline-line"></div></div>
+      <div class="swipe-container"><div class="timeline-card">
+        <div class="photo-col"><div class="photo-placeholder">🙂</div></div>
+        <div class="timeline-info">
+          <div class="tl-row1"><span class="tl-weight">65.5kg</span><span class="tl-time">⏰ 7:15</span><span class="tl-time">🛏 24:00</span></div>
+          <div class="tl-reading"><span>📚</span><span class="tl-reading-title">騎士団長殺し 第一部</span><span class="tl-reading-time">⏱ 30分</span></div>
+          <div class="tl-comment">🌅 少し眠い朝</div>
+        </div>
+        <div class="timeline-arrow">›</div>
+      </div></div>
+    </li>
+    <li class="history-item">
+      <div class="timeline-date"><div class="timeline-day">28</div><div class="timeline-weekday">水</div><div class="timeline-line"></div></div>
+      <div class="swipe-container"><div class="timeline-card">
+        <div class="photo-col"><div class="photo-fill">🤳</div></div>
+        <div class="timeline-info">
+          <div class="tl-row1"><span class="tl-weight">65.8kg</span><span class="tl-time">⏰ 6:45</span></div>
+          <div class="tl-comment">🌅 早起き成功！</div>
+          <div class="tl-comment">🌙 読書できなかった</div>
+        </div>
+        <div class="timeline-arrow">›</div>
+      </div></div>
+    </li>
+    <li class="history-item">
+      <div class="timeline-date"><div class="timeline-day">27</div><div class="timeline-weekday">火</div><div class="timeline-line"></div></div>
+      <div class="swipe-container"><div class="timeline-card">
+        <div class="photo-col"><div class="photo-placeholder">🙂</div></div>
+        <div class="timeline-info">
+          <div class="tl-row1"><span class="tl-weight">66.0kg</span><span class="tl-time">⏰ 7:30</span><span class="tl-time">🛏 23:00</span></div>
+          <div class="tl-reading"><span>📚</span><span class="tl-reading-title">海辺のカフカ</span><span class="tl-reading-time">⏱ 1時間</span></div>
+        </div>
+        <div class="timeline-arrow">›</div>
+      </div></div>
+    </li>
+    <li class="history-item">
+      <div class="timeline-date"><div class="timeline-day">26</div><div class="timeline-weekday">月</div><div class="timeline-line"></div></div>
+      <div class="swipe-container"><div class="timeline-card">
+        <div class="photo-col"><div class="photo-fill">🤳</div></div>
+        <div class="timeline-info">
+          <div class="tl-row1"><span class="tl-weight">65.9kg</span><span class="tl-time">⏰ 6:30</span><span class="tl-time">🛏 22:45</span></div>
+          <div class="tl-reading"><span>📚</span><span class="tl-reading-title">1Q84</span><span class="tl-reading-time">⏱ 20分</span></div>
+          <div class="tl-comment">🌅 月曜も元気にスタート</div>
+          <div class="tl-comment">🌙 疲れたけど充実</div>
+        </div>
+        <div class="timeline-arrow">›</div>
+      </div></div>
+    </li>
+    <li class="history-item">
+      <div class="timeline-date"><div class="timeline-day">25</div><div class="timeline-weekday">日</div></div>
+      <div class="swipe-container"><div class="timeline-card">
+        <div class="photo-col"><div class="photo-placeholder">🙂</div></div>
+        <div class="timeline-info">
+          <div class="tl-row1"><span class="tl-weight">66.2kg</span><span class="tl-time">⏰ 8:00</span><span class="tl-time">🛏 23:45</span></div>
+          <div class="tl-reading"><span>📚</span><span class="tl-reading-title">世界の終りとハードボイルド・ワンダーランド</span><span class="tl-reading-time">⏱ 1.5時間</span></div>
+          <div class="tl-comment">🌅 休日のんびり</div>
+        </div>
+        <div class="timeline-arrow">›</div>
+      </div></div>
+    </li>
+  </ul>
+  <div class="bottom-nav">
+    <button class="nav-item"><span class="nav-icon">📝</span><span class="nav-label">記録</span></button>
+    <button class="nav-item active"><span class="nav-icon">📖</span><span class="nav-label">履歴</span></button>
+  </div>
+</div>
+</div>
+
+</body>
+</html>
