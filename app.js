@@ -250,7 +250,7 @@ async function sbPush(entry) {
   const ctrl = new AbortController();
   const tid = setTimeout(() => ctrl.abort(), 15000);
   try {
-    const resp = await fetch(`${SUPABASE_URL}/rest/v1/entries`, {
+    const resp = await fetch(`${SUPABASE_URL}/rest/v1/entries?on_conflict=date`, {
       method: 'POST',
       headers: {
         'apikey': SUPABASE_KEY,
