@@ -492,7 +492,7 @@ button:active { opacity: 0.8; transform: scale(0.97); }
 }
 
 .timeline-day { font-size: 0.95rem; font-weight: 800; color: var(--primary); line-height: 1; }
-.timeline-weekday { font-size: 0.58rem; color: var(--muted); margin-top: 1px; }
+.timeline-weekday { font-size: 0.68rem; color: var(--muted); margin-top: 1px; }
 
 .timeline-line {
   width: 2px;
@@ -510,7 +510,7 @@ button:active { opacity: 0.8; transform: scale(0.97); }
   margin-left: 6px;
   position: relative;
   overflow: hidden;
-  border-radius: var(--radius);
+  border-radius: 4px;
   box-shadow: var(--shadow);
 }
 
@@ -530,6 +530,7 @@ button:active { opacity: 0.8; transform: scale(0.97); }
 
 .timeline-card {
   width: 100%;
+  height: 80px;
   background: var(--card);
   overflow: hidden;
   display: flex;
@@ -539,18 +540,18 @@ button:active { opacity: 0.8; transform: scale(0.97); }
 }
 
 .timeline-photo-col {
-  width: 72px;
+  width: 80px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
 }
 
 .timeline-thumb {
-  width: 72px;
+  width: 80px;
   flex: 1;
   object-fit: cover;
   display: block;
-  min-height: 52px;
+  min-height: 80px;
 }
 
 .timeline-thumb-placeholder {
@@ -560,7 +561,7 @@ button:active { opacity: 0.8; transform: scale(0.97); }
   align-items: center;
   justify-content: center;
   font-size: 1.6rem;
-  min-height: 52px;
+  min-height: 80px;
 }
 
 .timeline-info {
@@ -581,14 +582,14 @@ button:active { opacity: 0.8; transform: scale(0.97); }
 }
 
 .tl-weight {
-  font-size: 0.78rem;
+  font-size: 0.85rem;
   font-weight: 700;
   color: var(--primary);
   white-space: nowrap;
 }
 
 .tl-time {
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   color: var(--muted);
   white-space: nowrap;
 }
@@ -597,7 +598,7 @@ button:active { opacity: 0.8; transform: scale(0.97); }
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 0.73rem;
+  font-size: 0.82rem;
   color: #8060a0;
   overflow: hidden;
 }
@@ -615,12 +616,12 @@ button:active { opacity: 0.8; transform: scale(0.97); }
   color: #8060a0;
   border-radius: 50px;
   padding: 1px 7px;
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   font-weight: 700;
 }
 
 .timeline-comment {
-  font-size: 0.73rem;
+  font-size: 0.82rem;
   color: var(--muted);
   white-space: nowrap;
   overflow: hidden;
