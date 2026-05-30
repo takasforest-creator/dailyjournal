@@ -194,17 +194,28 @@ function initAuth() {
   });
 }
 
+function formatMinutes(min) {
+  if (!min) return '';
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  if (h === 0) return `${m}分`;
+  if (m === 0) return `${h}時間`;
+  return `${h}時間${m}分`;
+}
+
 function entryToRow(e) {
   const row = {
-    date:       e.date,
-    ts:         e.ts ? new Date(e.ts).getTime() : null,
-    weight:     e.weight ?? null,
-    morning:    e.morning  || null,
-    evening:    e.evening  || null,
-    wake_time:  e.wakeTime  || null,
-    sleep_time: e.sleepTime || null,
-    updated_at: new Date().toISOString(),
-    user_id:    currentUserId,
+    date:            e.date,
+    ts:              e.ts ? new Date(e.ts).getTime() : null,
+    weight:          e.weight ?? null,
+    morning:         e.morning  || null,
+    evening:         e.evening  || null,
+    wake_time:       e.wakeTime  || null,
+    sleep_time:      e.sleepTime || null,
+    book_title:      e.bookTitle || null,
+    reading_minutes: e.readingMinutes ?? null,
+    updated_at:      new Date().toISOString(),
+    user_id:         currentUserId,
   };
   if (e.photo !== undefined) row.photo = e.photo || null;
   return row;
@@ -212,14 +223,16 @@ function entryToRow(e) {
 
 function rowToEntry(row) {
   return {
-    date:      row.date,
-    ts:        row.ts ? new Date(row.ts).toISOString() : null,
-    weight:    row.weight,
-    morning:   row.morning,
-    evening:   row.evening,
-    photo:     null, // localStorageには保存しない（sbPhotoCacheを使う）
-    wakeTime:  row.wake_time,
-    sleepTime: row.sleep_time,
+    date:           row.date,
+    ts:             row.ts ? new Date(row.ts).toISOString() : null,
+    weight:         row.weight,
+    morning:        row.morning,
+    evening:        row.evening,
+    photo:          null, // localStorageには保存しない（sbPhotoCacheを使う）
+    wakeTime:       row.wake_time,
+    sleepTime:      row.sleep_time,
+    bookTitle:      row.book_title      || null,
+    readingMinutes: row.reading_minutes ?? null,
   };
 }
 
@@ -290,7 +303,7 @@ async function sbSync() {
     let resp;
     try {
       resp = await fetch(
-        `${SUPABASE_URL}/rest/v1/entries?select=date,ts,weight,morning,evening,wake_time,sleep_time,updated_at,user_id&order=date.desc`,
+        `${SUPABASE_URL}/rest/v1/entries?select=date,ts,weight,morning,evening,wake_time,sleep_time,book_title,reading_minutes,updated_at,user_id&order=date.desc`,
         { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + token }, signal: ctrl.signal }
       );
     } finally { clearTimeout(tid); }
@@ -507,11 +520,13 @@ function resetForm() {
   stopStream();
   capturedDataUrl = null;
 
-  document.getElementById('weight-input').value  = '';
-  document.getElementById('morning-input').value = '';
-  document.getElementById('evening-input').value = '';
-  document.getElementById('wake-input').value    = '';
-  document.getElementById('sleep-input').value   = '';
+  document.getElementById('weight-input').value          = '';
+  document.getElementById('morning-input').value         = '';
+  document.getElementById('evening-input').value         = '';
+  document.getElementById('wake-input').value            = '';
+  document.getElementById('sleep-input').value           = '';
+  document.getElementById('book-input').value            = '';
+  document.getElementById('reading-minutes-input').value = '';
 
   const preview     = document.getElementById('photo-preview');
   const placeholder = document.getElementById('camera-placeholder');
@@ -544,8 +559,10 @@ function initSave() {
     const weight    = parseFloat(document.getElementById('weight-input').value);
     const morning   = document.getElementById('morning-input').value.trim();
     const evening   = document.getElementById('evening-input').value.trim();
-    const wakeTime  = document.getElementById('wake-input').value  || null;
-    const sleepTime = document.getElementById('sleep-input').value || null;
+    const wakeTime       = document.getElementById('wake-input').value  || null;
+    const sleepTime      = document.getElementById('sleep-input').value || null;
+    const bookTitle      = document.getElementById('book-input').value.trim() || null;
+    const readingMinutes = parseInt(document.getElementById('reading-minutes-input').value) || null;
 
     if (!capturedDataUrl && !confirm('写真が撮影されていません。このまま保存しますか？')) return;
     if (isNaN(weight) && !confirm('体重が入力されていません。このまま保存しますか？')) return;
@@ -566,9 +583,11 @@ function initSave() {
       weight:    isNaN(weight) ? null : weight,
       morning,
       evening,
-      photo:     localPhoto,
+      photo:          localPhoto,
       wakeTime,
       sleepTime,
+      bookTitle,
+      readingMinutes,
     };
 
     if (idx !== -1) {
@@ -612,8 +631,10 @@ function startEdit(entry) {
   document.getElementById('weight-input').value  = entry.weight != null ? entry.weight.toFixed(1) : '';
   document.getElementById('morning-input').value = entry.morning   || '';
   document.getElementById('evening-input').value = entry.evening   || '';
-  document.getElementById('wake-input').value    = entry.wakeTime  || '';
-  document.getElementById('sleep-input').value   = entry.sleepTime || '';
+  document.getElementById('wake-input').value            = entry.wakeTime       || '';
+  document.getElementById('sleep-input').value           = entry.sleepTime      || '';
+  document.getElementById('book-input').value            = entry.bookTitle      || '';
+  document.getElementById('reading-minutes-input').value = entry.readingMinutes != null ? entry.readingMinutes : '';
 
   // 写真プレビュー
   stopStream();
@@ -695,17 +716,18 @@ function renderTimeline(filtered, entries) {
     const thumbInner = photo
       ? `<img class="timeline-thumb" alt="写真" />`
       : `<div class="timeline-thumb-placeholder">🙂</div>`;
-    const weightLabel = entry.weight != null ? `${entry.weight.toFixed(1)} kg` : '';
-    const thumbHtml = `<div class="timeline-photo-col">${thumbInner}${weightLabel ? `<div class="timeline-thumb-weight">${weightLabel}</div>` : ''}</div>`;
+    const thumbHtml = `<div class="timeline-photo-col">${thumbInner}</div>`;
 
-    const wakeHtml  = entry.wakeTime  ? `<span class="tl-time">⏰ ${entry.wakeTime}</span>`  : '';
-    const sleepHtml = entry.sleepTime ? `<span class="tl-time">🛏 ${entry.sleepTime}</span>` : '';
-    const timesHtml = (wakeHtml || sleepHtml)
-      ? `<div class="timeline-times">${wakeHtml}${sleepHtml}</div>` : '';
-    const morningHtml = entry.morning
-      ? `<div class="timeline-comment">🌅 ${escapeHtml(entry.morning)}</div>` : '';
-    const eveningHtml = entry.evening
-      ? `<div class="timeline-comment">🌙 ${escapeHtml(entry.evening)}</div>` : '';
+    const weightHtml  = entry.weight      != null ? `<span class="tl-weight">${entry.weight.toFixed(1)}kg</span>` : '';
+    const wakeHtml    = entry.wakeTime    ? `<span class="tl-time">⏰ ${entry.wakeTime}</span>`   : '';
+    const sleepHtml   = entry.sleepTime   ? `<span class="tl-time">🛏 ${entry.sleepTime}</span>`  : '';
+    const row1Parts   = [weightHtml, wakeHtml, sleepHtml].filter(Boolean);
+    const row1Html    = row1Parts.length  ? `<div class="tl-row1">${row1Parts.join('')}</div>`    : '';
+    const readingHtml = entry.bookTitle
+      ? `<div class="tl-reading"><span>📚</span><span class="tl-reading-title">${escapeHtml(entry.bookTitle)}</span>${entry.readingMinutes ? `<span class="tl-reading-time">⏱ ${formatMinutes(entry.readingMinutes)}</span>` : ''}</div>`
+      : '';
+    const morningHtml = entry.morning ? `<div class="timeline-comment">🌅 ${escapeHtml(entry.morning)}</div>` : '';
+    const eveningHtml = entry.evening ? `<div class="timeline-comment">🌙 ${escapeHtml(entry.evening)}</div>` : '';
 
     li.innerHTML = `
       <div class="timeline-date">
@@ -719,7 +741,8 @@ function renderTimeline(filtered, entries) {
         <div class="timeline-card">
           ${thumbHtml}
           <div class="timeline-info">
-            ${timesHtml}
+            ${row1Html}
+            ${readingHtml}
             ${morningHtml}
             ${eveningHtml}
           </div>
@@ -902,6 +925,15 @@ function openDetail(entry, entries) {
     eveningEl.hidden = false;
   } else {
     eveningEl.hidden = true;
+  }
+
+  const readingEl = document.getElementById('modal-reading');
+  if (entry.bookTitle) {
+    const timeStr = entry.readingMinutes ? `  ⏱ ${formatMinutes(entry.readingMinutes)}` : '';
+    document.getElementById('modal-reading-text').textContent = entry.bookTitle + timeStr;
+    readingEl.hidden = false;
+  } else {
+    readingEl.hidden = true;
   }
 
   modal.hidden = false;

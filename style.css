@@ -269,6 +269,60 @@ html, body {
 .comment-divider { height: 1px; background: var(--border); margin: 0 16px; }
 
 /* =============================
+   読書カード
+   ============================= */
+.reading-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 14px 16px;
+  margin-bottom: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.reading-book-input {
+  width: 100%;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 9px 11px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  outline: none;
+  color: var(--text);
+  background: var(--bg);
+  transition: border-color 0.2s;
+}
+.reading-book-input:focus { border-color: var(--primary); }
+
+.reading-minutes-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.reading-icon { font-size: 1.1rem; }
+.reading-unit { font-size: 0.9rem; color: var(--muted); }
+
+.reading-minutes-input {
+  width: 80px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 9px 11px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  outline: none;
+  color: var(--text);
+  background: var(--bg);
+  text-align: center;
+  transition: border-color 0.2s;
+}
+.reading-minutes-input:focus { border-color: var(--primary); }
+.reading-minutes-input::-webkit-inner-spin-button,
+.reading-minutes-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+/* =============================
    ボタン
    ============================= */
 .btn-primary, .btn-secondary, .btn-capture {
@@ -424,28 +478,28 @@ button:active { opacity: 0.8; transform: scale(0.97); }
 
 .history-item {
   display: flex;
-  margin-bottom: 18px;
+  margin-bottom: 7px;
   cursor: pointer;
 }
 
 .timeline-date {
-  width: 52px;
+  width: 34px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding-top: 6px;
+  padding-top: 4px;
 }
 
-.timeline-day { font-size: 1.4rem; font-weight: 800; color: var(--primary); line-height: 1; }
-.timeline-weekday { font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+.timeline-day { font-size: 0.95rem; font-weight: 800; color: var(--primary); line-height: 1; }
+.timeline-weekday { font-size: 0.58rem; color: var(--muted); margin-top: 1px; }
 
 .timeline-line {
   width: 2px;
   background: var(--border);
   flex: 1;
-  margin-top: 8px;
-  min-height: 20px;
+  margin-top: 5px;
+  min-height: 12px;
 }
 
 /* =============================
@@ -453,7 +507,7 @@ button:active { opacity: 0.8; transform: scale(0.97); }
    ============================= */
 .swipe-container {
   flex: 1;
-  margin-left: 12px;
+  margin-left: 6px;
   position: relative;
   overflow: hidden;
   border-radius: var(--radius);
@@ -485,28 +539,18 @@ button:active { opacity: 0.8; transform: scale(0.97); }
 }
 
 .timeline-photo-col {
-  width: 80px;
+  width: 72px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
 }
 
 .timeline-thumb {
-  width: 80px;
+  width: 72px;
   flex: 1;
   object-fit: cover;
   display: block;
-  min-height: 60px;
-}
-
-.timeline-thumb-weight {
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: var(--primary);
-  text-align: center;
-  padding: 4px 2px;
-  background: var(--card);
-  white-space: nowrap;
+  min-height: 52px;
 }
 
 .timeline-thumb-placeholder {
@@ -515,23 +559,32 @@ button:active { opacity: 0.8; transform: scale(0.97); }
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2rem;
+  font-size: 1.6rem;
+  min-height: 52px;
 }
 
 .timeline-info {
   flex: 1;
-  padding: 12px 10px 12px 14px;
+  padding: 7px 5px 7px 10px;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 4px;
+  gap: 2px;
   min-width: 0;
 }
 
-.timeline-times {
+.tl-row1 {
   display: flex;
-  gap: 8px;
+  align-items: center;
+  gap: 6px;
   flex-wrap: wrap;
+}
+
+.tl-weight {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--primary);
+  white-space: nowrap;
 }
 
 .tl-time {
@@ -540,8 +593,34 @@ button:active { opacity: 0.8; transform: scale(0.97); }
   white-space: nowrap;
 }
 
+.tl-reading {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.73rem;
+  color: #8060a0;
+  overflow: hidden;
+}
+
+.tl-reading-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.tl-reading-time {
+  flex-shrink: 0;
+  background: #f0e8fa;
+  color: #8060a0;
+  border-radius: 50px;
+  padding: 1px 7px;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
 .timeline-comment {
-  font-size: 0.75rem;
+  font-size: 0.73rem;
   color: var(--muted);
   white-space: nowrap;
   overflow: hidden;

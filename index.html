@@ -43,7 +43,7 @@
   <div id="screen-record" class="screen">
     <div class="header">
       <div class="header-sub" id="header-date"></div>
-      <div class="header-title">DAILY JOURNAL <span style="font-size:0.5rem;opacity:0.6">v38</span></div>
+      <div class="header-title">DAILY JOURNAL <span style="font-size:0.5rem;opacity:0.6">v39</span></div>
     </div>
 
     <div class="body-scroll">
@@ -108,6 +108,17 @@
         </div>
         <div class="comment-body">
           <textarea id="evening-input" rows="2" placeholder="今日一日どうだった…"></textarea>
+        </div>
+      </div>
+
+      <!-- 読書 -->
+      <div class="section-label">読書</div>
+      <div class="reading-card">
+        <input id="book-input" type="text" placeholder="読んだ本のタイトル" class="reading-book-input" />
+        <div class="reading-minutes-row">
+          <span class="reading-icon">⏱</span>
+          <input id="reading-minutes-input" type="number" min="0" max="999" placeholder="0" class="reading-minutes-input" inputmode="numeric" />
+          <span class="reading-unit">分</span>
         </div>
       </div>
 
@@ -196,6 +207,10 @@
         <div class="modal-comment" id="modal-evening" hidden>
           <span class="modal-comment-icon">🌙</span>
           <span id="modal-evening-text"></span>
+        </div>
+        <div class="modal-comment" id="modal-reading" hidden>
+          <span class="modal-comment-icon">📚</span>
+          <span id="modal-reading-text"></span>
         </div>
       </div>
       <button id="modal-edit" class="btn-edit">編集する</button>
