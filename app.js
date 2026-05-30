@@ -77,18 +77,6 @@ async function onLoggedIn(session) {
   sbSync();
 }
 
-function handleAuthError(err) {
-  const msg = err?.message || '';
-  if (msg.includes('JWT') || msg.includes('token') || msg.includes('401') || err?.status === 401) {
-    sbClient.auth.signOut().finally(() => {
-      currentUserId = null;
-      showLoginScreen();
-      showToast('セッションが期限切れです。再ログインしてください。');
-    });
-    return true;
-  }
-  return false;
-}
 
 async function checkAuth() {
   if (!sbClient) return;
@@ -235,99 +223,135 @@ function rowToEntry(row) {
   };
 }
 
-async function sbPush(entry) {
-  if (!sbClient) return;
+function getAuthToken() {
   try {
-    const { error } = await sbClient.from('entries')
-      .upsert(entryToRow(entry), { onConflict: 'date' });
-    if (error) { alert('DB保存エラー:\n' + error.message); throw error; }
+    const raw = localStorage.getItem('sb-nraanwywbbmdwpcxwgop-auth-token');
+    return raw ? (JSON.parse(raw)?.access_token || '') : '';
+  } catch { return ''; }
+}
+
+async function sbPush(entry) {
+  const token = getAuthToken();
+  if (!token) return;
+
+  const ctrl = new AbortController();
+  const tid = setTimeout(() => ctrl.abort(), 15000);
+  try {
+    const resp = await fetch(`${SUPABASE_URL}/rest/v1/entries`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates,return=minimal',
+      },
+      body: JSON.stringify(entryToRow(entry)),
+      signal: ctrl.signal,
+    });
+    if (!resp.ok && resp.status !== 401) {
+      const text = await resp.text();
+      alert('DB保存エラー:\n' + text);
+    }
   } catch (err) {
     console.error('sbPush error:', err);
+  } finally {
+    clearTimeout(tid);
   }
 }
 
 async function sbDelete(date) {
-  if (!sbClient) return;
   sbPhotoCache.delete(date);
+  const token = getAuthToken();
+  if (!token) return;
+
+  const ctrl = new AbortController();
+  const tid = setTimeout(() => ctrl.abort(), 10000);
   try {
-    await sbClient.from('entries').delete().eq('date', date);
+    await fetch(`${SUPABASE_URL}/rest/v1/entries?date=eq.${date}`, {
+      method: 'DELETE',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + token },
+      signal: ctrl.signal,
+    });
   } catch (err) {
     console.error('sbDelete error:', err);
+  } finally {
+    clearTimeout(tid);
   }
 }
 
 async function sbSync() {
-  if (!sbClient) return;
+  const token = getAuthToken();
+  if (!token) return;
+
+  let data;
   try {
-    const { data, error } = await sbClient.from('entries')
-      .select('date,ts,weight,morning,evening,wake_time,sleep_time,updated_at,user_id')
-      .order('date', { ascending: false });
-    if (error) throw error;
-
-    const local   = loadEntries();
-    const sbDates = new Set((data || []).map(r => r.date));
-
-    for (const entry of local) {
-      if (!sbDates.has(entry.date)) {
-        const photo = sbPhotoCache.get(entry.date) || entry.photo || null;
-        await sbPush({ ...entry, photo });
-      }
-    }
-
-    const merged = new Map(local.map(e => [e.date, e]));
-    (data || []).forEach(row => merged.set(row.date, rowToEntry(row)));
-    const sorted = [...merged.values()].sort((a, b) => b.date.localeCompare(a.date));
-    saveEntries(sorted);
-
-    // renderHistory() が currentMonth を確定させてから写真を取得する
-    renderHistory();
-    if (currentMonth) {
-      await syncPhotosForMonth(currentMonth);
-      renderHistory();
-    }
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), 15000);
+    let resp;
+    try {
+      resp = await fetch(
+        `${SUPABASE_URL}/rest/v1/entries?select=date,ts,weight,morning,evening,wake_time,sleep_time,updated_at,user_id&order=date.desc`,
+        { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + token }, signal: ctrl.signal }
+      );
+    } finally { clearTimeout(tid); }
+    if (resp.status === 401) { showToast('セッション期限切れ。再ログインしてください。'); return; }
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    data = await resp.json();
   } catch (err) {
     console.error('sbSync error:', err);
-    if (!handleAuthError(err)) showToast('同期失敗: ' + (err.message || '通信エラー'));
+    showToast('同期失敗: ' + (err.message || '通信エラー'));
+    return;
+  }
+
+  const local   = loadEntries();
+  const sbDates = new Set((data || []).map(r => r.date));
+
+  for (const entry of local) {
+    if (!sbDates.has(entry.date)) {
+      const photo = sbPhotoCache.get(entry.date) || entry.photo || null;
+      await sbPush({ ...entry, photo });
+    }
+  }
+
+  const merged = new Map(local.map(e => [e.date, e]));
+  (data || []).forEach(row => merged.set(row.date, rowToEntry(row)));
+  const sorted = [...merged.values()].sort((a, b) => b.date.localeCompare(a.date));
+  saveEntries(sorted);
+
+  // renderHistory() が currentMonth を確定させてから写真を取得する
+  renderHistory();
+  if (currentMonth) {
+    await syncPhotosForMonth(currentMonth);
+    renderHistory();
   }
 }
 
 async function syncPhotosForMonth(ym) {
-  if (!sbClient || !ym) return;
+  if (!ym) return;
+  const token = getAuthToken();
+  if (!token) return;
+
+  const from = ym + '-01';
+  const [y, m] = ym.split('-').map(Number);
+  const to = ym + '-' + String(new Date(y, m, 0).getDate()).padStart(2, '0');
+
+  const ctrl = new AbortController();
+  const tid = setTimeout(() => ctrl.abort(), 12000);
   try {
-    const from = ym + '-01';
-    const [y, m] = ym.split('-').map(Number);
-    const lastDay = new Date(y, m, 0).getDate();
-    const to = ym + '-' + String(lastDay).padStart(2, '0');
-
-    // Supabase JS クライアントを介さず raw fetch で取得（トークンリフレッシュのハングを回避）
-    let token = '';
-    try {
-      const raw = localStorage.getItem('sb-nraanwywbbmdwpcxwgop-auth-token');
-      token = raw ? (JSON.parse(raw)?.access_token || '') : '';
-    } catch {}
-    if (!token) return;
-
-    const url = `${SUPABASE_URL}/rest/v1/entries?select=date,photo&date=gte.${from}&date=lte.${to}`;
-    const ctrl = new AbortController();
-    const tid = setTimeout(() => ctrl.abort(), 12000);
     let resp;
     try {
-      resp = await fetch(url, {
-        headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + token },
-        signal: ctrl.signal,
-      });
+      resp = await fetch(
+        `${SUPABASE_URL}/rest/v1/entries?select=date,photo&date=gte.${from}&date=lte.${to}`,
+        { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + token }, signal: ctrl.signal }
+      );
     } finally { clearTimeout(tid); }
-
-    if (resp.status === 401) {
-      showToast('セッション期限切れ。再ログインしてください。');
-      return;
-    }
+    if (resp.status === 401) { showToast('セッション期限切れ。再ログインしてください。'); return; }
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     const data = await resp.json();
     data.forEach(row => { if (row.photo) sbPhotoCache.set(row.date, row.photo); });
   } catch (err) {
     console.error('syncPhotosForMonth error:', err);
-    if (!handleAuthError(err)) showToast('写真の取得に失敗: ' + (err.message || '通信エラー'));
+    showToast('写真の取得に失敗: ' + (err.message || '通信エラー'));
   }
 }
 
