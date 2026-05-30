@@ -540,14 +540,14 @@ button:active { opacity: 0.8; transform: scale(0.97); }
 }
 
 .timeline-photo-col {
-  width: 80px;
+  width: 60px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
 }
 
 .timeline-thumb {
-  width: 80px;
+  width: 60px;
   flex: 1;
   object-fit: cover;
   display: block;
