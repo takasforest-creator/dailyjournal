@@ -303,7 +303,7 @@ async function sbSync() {
     let resp;
     try {
       resp = await fetch(
-        `${SUPABASE_URL}/rest/v1/entries?select=date,ts,weight,morning,evening,wake_time,sleep_time,book_title,reading_minutes,updated_at,user_id&order=date.desc`,
+        `${SUPABASE_URL}/rest/v1/entries?select=date,ts,weight,morning,evening,wake_time,sleep_time,book_title,reading_minutes,updated_at,user_id&user_id=eq.${currentUserId}&order=date.desc`,
         { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + token }, signal: ctrl.signal }
       );
     } finally { clearTimeout(tid); }
@@ -354,7 +354,7 @@ async function syncPhotosForMonth(ym) {
     let resp;
     try {
       resp = await fetch(
-        `${SUPABASE_URL}/rest/v1/entries?select=date,photo&date=gte.${from}&date=lte.${to}`,
+        `${SUPABASE_URL}/rest/v1/entries?select=date,photo&user_id=eq.${currentUserId}&date=gte.${from}&date=lte.${to}`,
         { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + token }, signal: ctrl.signal }
       );
     } finally { clearTimeout(tid); }
