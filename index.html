@@ -43,7 +43,7 @@
   <div id="screen-record" class="screen">
     <div class="header">
       <div class="header-sub" id="header-date"></div>
-      <div class="header-title">DAILY JOURNAL <span style="font-size:0.5rem;opacity:0.6">v37</span></div>
+      <div class="header-title">DAILY JOURNAL <span style="font-size:0.5rem;opacity:0.6">v38</span></div>
     </div>
 
     <div class="body-scroll">
@@ -123,19 +123,14 @@
       <div class="header-title-row">
         <div class="header-title">HISTORY</div>
         <div style="display:flex;gap:8px;align-items:center">
-          <button id="btn-sync" class="btn-view-toggle" title="再同期">↻</button>
           <button id="btn-view-toggle" class="btn-view-toggle">⊞</button>
+          <button id="btn-menu" class="btn-view-toggle">⋯</button>
         </div>
       </div>
     </div>
 
     <div class="body-scroll">
-      <div class="backup-bar">
-        <button id="btn-export" class="btn-backup">📤 バックアップ</button>
-        <button id="btn-import" class="btn-backup">📥 復元</button>
-        <input id="import-file" type="file" accept=".json" hidden />
-        <button id="btn-logout" class="btn-backup">🚪 ログアウト</button>
-      </div>
+      <input id="import-file" type="file" accept=".json" hidden />
       <div id="month-filter" class="month-filter"></div>
 
       <div id="history-empty" class="empty-state" hidden>
@@ -160,6 +155,19 @@
       <span class="nav-label">履歴</span>
     </button>
   </nav>
+
+  <!-- メニューシート -->
+  <div id="menu-sheet" class="menu-sheet" hidden>
+    <div class="menu-backdrop"></div>
+    <div class="menu-card">
+      <button id="menu-export" class="menu-item">📤 バックアップ</button>
+      <button id="menu-import" class="menu-item">📥 復元</button>
+      <button id="menu-sync" class="menu-item">↻ リロード</button>
+      <button id="menu-logout" class="menu-item menu-item-danger">🚪 ログアウト</button>
+      <div class="menu-divider"></div>
+      <button id="menu-cancel" class="menu-cancel">キャンセル</button>
+    </div>
+  </div>
 
   <!-- 詳細モーダル -->
   <div id="detail-modal" class="modal" hidden>

@@ -952,29 +952,40 @@ function importData(file) {
 }
 
 /* ── 手動同期ボタン ── */
-function initSyncButton() {
-  const btn = document.getElementById('btn-sync');
-  btn.addEventListener('click', async () => {
-    btn.textContent = '…';
-    btn.disabled = true;
-    await sbSync();
-    btn.textContent = '↻';
-    btn.disabled = false;
-  });
-}
-
-/* ── バックアップバー初期化 ── */
-function initBackup() {
-  document.getElementById('btn-export').addEventListener('click', exportData);
+/* ── メニュー ── */
+function initMenu() {
+  const sheet     = document.getElementById('menu-sheet');
   const fileInput = document.getElementById('import-file');
-  document.getElementById('btn-import').addEventListener('click', () => {
+
+  function openMenu() { sheet.hidden = false; }
+  function closeMenu() { sheet.hidden = true; }
+
+  document.getElementById('btn-menu').addEventListener('click', openMenu);
+  document.getElementById('menu-cancel').addEventListener('click', closeMenu);
+  document.querySelector('#menu-sheet .menu-backdrop').addEventListener('click', closeMenu);
+
+  document.getElementById('menu-export').addEventListener('click', () => {
+    closeMenu();
+    exportData();
+  });
+
+  document.getElementById('menu-import').addEventListener('click', () => {
+    closeMenu();
     fileInput.value = '';
     fileInput.click();
   });
   fileInput.addEventListener('change', () => {
     if (fileInput.files[0]) importData(fileInput.files[0]);
   });
-  document.getElementById('btn-logout').addEventListener('click', async () => {
+
+  document.getElementById('menu-sync').addEventListener('click', async () => {
+    closeMenu();
+    showToast('再同期中…');
+    await sbSync();
+  });
+
+  document.getElementById('menu-logout').addEventListener('click', async () => {
+    closeMenu();
     if (!confirm('ログアウトしますか？')) return;
     if (sbClient) await sbClient.auth.signOut().catch(() => {});
     currentUserId = null;
@@ -1001,9 +1012,8 @@ document.addEventListener('DOMContentLoaded', () => {
   initWeightControls();
   initSave();
   initModal();
-  initBackup();
+  initMenu();
   initViewToggle();
-  initSyncButton();
   initSupabase();
   initAuth();
   checkAuth();
