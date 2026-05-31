@@ -321,8 +321,8 @@ async function sbSync() {
 
   for (const entry of local) {
     if (!sbDates.has(entry.date)) {
-      const photo = sbPhotoCache.get(entry.date) || entry.photo || null;
-      await sbPush({ ...entry, photo });
+      const photoData = sbPhotoCache.get(entry.date) || entry.photo || undefined;
+      await sbPush({ ...entry, photo: photoData });
     }
   }
 
