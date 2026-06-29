@@ -555,38 +555,43 @@ function initWeightControls() {
 /* ── 保存 ── */
 function initSave() {
   document.getElementById('btn-save').addEventListener('click', () => {
-    const weight    = parseFloat(document.getElementById('weight-input').value);
-    const morning   = document.getElementById('morning-input').value.trim();
-    const evening   = document.getElementById('evening-input').value.trim();
-    const wakeTime       = document.getElementById('wake-input').value  || null;
-    const sleepTime      = document.getElementById('sleep-input').value || null;
-    const bookTitle      = document.getElementById('book-input').value.trim() || null;
-    const readingMinutes = parseInt(document.getElementById('reading-minutes-input').value) || null;
-
-    if (!capturedDataUrl && !confirm('写真が撮影されていません。このまま保存しますか？')) return;
-    if (isNaN(weight) && !confirm('体重が入力されていません。このまま保存しますか？')) return;
-
     const entries = loadEntries();
     const key = editingEntry ? editingEntry.date : todayKey();
     const idx = entries.findIndex(e => e.date === key);
+    const existing = idx !== -1 ? entries[idx] : null;
+    // 編集画面でなく直接保存する場合、未入力の項目は既存の記録を維持する
+    // （朝に保存→同じ日の夜に追記、といった使い方でデータが消えないようにする）
+    const keepExisting = !editingEntry && !!existing;
 
-    const photoBase64 = capturedDataUrl || null;
-    const isNewCapture  = photoBase64 && photoBase64.startsWith('data:');
-    const isExistingUrl = photoBase64 && !photoBase64.startsWith('data:');
-    // localStorage には URL のみ保存（base64 は保存しない）
-    const localPhoto = isExistingUrl ? photoBase64 : (idx !== -1 && !isNewCapture ? (entries[idx].photo || null) : null);
+    const weightInput         = parseFloat(document.getElementById('weight-input').value);
+    const morningInput        = document.getElementById('morning-input').value.trim();
+    const eveningInput        = document.getElementById('evening-input').value.trim();
+    const wakeInput           = document.getElementById('wake-input').value  || null;
+    const sleepInput          = document.getElementById('sleep-input').value || null;
+    const bookInput           = document.getElementById('book-input').value.trim() || null;
+    const readingMinutesInput = parseInt(document.getElementById('reading-minutes-input').value) || null;
+
+    const weight         = !isNaN(weightInput) ? weightInput  : (keepExisting ? existing.weight         : null);
+    const morning         = morningInput        || (keepExisting ? (existing.morning || '') : '');
+    const evening         = eveningInput        || (keepExisting ? (existing.evening || '') : '');
+    const wakeTime        = wakeInput           || (keepExisting ? existing.wakeTime        : null);
+    const sleepTime       = sleepInput          || (keepExisting ? existing.sleepTime       : null);
+    const bookTitle       = bookInput           || (keepExisting ? existing.bookTitle       : null);
+    const readingMinutes  = readingMinutesInput != null ? readingMinutesInput : (keepExisting ? existing.readingMinutes : null);
+
+    const hasExistingPhoto = keepExisting && !!getPhoto(existing);
+    if (!capturedDataUrl && !hasExistingPhoto && !confirm('写真が撮影されていません。このまま保存しますか？')) return;
+    if (weight == null && !confirm('体重が入力されていません。このまま保存しますか？')) return;
+
+    const photoBase64  = capturedDataUrl || null;
+    const isNewCapture = photoBase64 && photoBase64.startsWith('data:');
 
     const entry = {
-      date:      key,
-      ts:        new Date().toISOString(),
-      weight:    isNaN(weight) ? null : weight,
-      morning,
-      evening,
-      photo:          localPhoto,
-      wakeTime,
-      sleepTime,
-      bookTitle,
-      readingMinutes,
+      date: key,
+      ts:   new Date().toISOString(),
+      weight, morning, evening,
+      photo: null, // localStorageには保存しない（sbPhotoCacheを使う）
+      wakeTime, sleepTime, bookTitle, readingMinutes,
     };
 
     if (idx !== -1) {
@@ -597,20 +602,19 @@ function initSave() {
     }
 
     saveEntries(entries);
-    const wasEditing = !!editingEntry;
     showToast(editingEntry ? '更新しました！' : '保存しました！');
     editingEntry = null;
     resetForm();
 
     // 写真をキャッシュに保存して Supabase に同期
     (async () => {
-      const finalPhoto = isNewCapture ? photoBase64 : localPhoto;
-      if (finalPhoto) sbPhotoCache.set(entry.date, finalPhoto);
+      // 新規撮影でなければキャッシュ済みの既存写真を維持。キャッシュに無ければ
+      // photo を省略して Supabase 側の既存値を保持する（誤って消さないため）
+      const photoForPush = isNewCapture ? photoBase64 : (sbPhotoCache.get(entry.date) || undefined);
+      if (photoForPush) sbPhotoCache.set(entry.date, photoForPush);
       if (isNewCapture && document.getElementById('screen-history').classList.contains('active')) {
         renderHistory();
       }
-      // 編集で新規撮影なしかつ写真なしの場合は photo を省略して Supabase の既存写真を保持
-      const photoForPush = isNewCapture ? photoBase64 : (wasEditing && !finalPhoto ? undefined : finalPhoto);
       await sbPush({ ...entry, photo: photoForPush });
     })();
   });
