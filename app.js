@@ -245,7 +245,7 @@ function getAuthToken() {
 
 async function sbPush(entry) {
   const token = getAuthToken();
-  if (!token) return;
+  if (!token) return false;
 
   const ctrl = new AbortController();
   const tid = setTimeout(() => ctrl.abort(), 15000);
@@ -264,9 +264,12 @@ async function sbPush(entry) {
     if (!resp.ok && resp.status !== 401) {
       const text = await resp.text();
       alert('DB保存エラー:\n' + text);
+      return false;
     }
+    return resp.ok;
   } catch (err) {
     console.error('sbPush error:', err);
+    return false;
   } finally {
     clearTimeout(tid);
   }
@@ -280,11 +283,16 @@ async function sbDelete(date) {
   const ctrl = new AbortController();
   const tid = setTimeout(() => ctrl.abort(), 10000);
   try {
-    await fetch(`${SUPABASE_URL}/rest/v1/entries?date=eq.${date}`, {
+    const resp = await fetch(`${SUPABASE_URL}/rest/v1/entries?date=eq.${date}`, {
       method: 'DELETE',
       headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + token },
       signal: ctrl.signal,
     });
+    if (resp.ok) {
+      const deleted = loadDeletedDates();
+      deleted.delete(date);
+      saveDeletedDates(deleted);
+    }
   } catch (err) {
     console.error('sbDelete error:', err);
   } finally {
@@ -316,6 +324,7 @@ async function sbSync() {
     return;
   }
 
+  const deletedDates = loadDeletedDates();
   const local = loadEntries();
   // date → Supabase行 のマップ（タイムスタンプ比較に使う）
   const sbMap = new Map((data || []).map(r => [r.date, r]));
@@ -323,6 +332,7 @@ async function sbSync() {
   // ローカルの記録がSupabaseより新しい場合（または未プッシュ）は送信する
   // （sbPushが失敗していた場合でも次回ログイン時にリカバリできるようにする）
   for (const entry of local) {
+    if (deletedDates.has(entry.date)) continue;
     const sbRow   = sbMap.get(entry.date);
     const localTs = entry.ts ? new Date(entry.ts).getTime() : 0;
     const sbTs    = sbRow?.updated_at ? new Date(sbRow.updated_at).getTime() : -1;
@@ -332,9 +342,17 @@ async function sbSync() {
     }
   }
 
+  // 削除に失敗した記録を再試行
+  for (const date of deletedDates) {
+    await sbDelete(date);
+  }
+
+  // マージ前に最新のローカルデータを再読み込み（同期中の保存を失わないため）
+  const freshLocal = loadEntries();
   // マージ：Supabaseが新しい場合のみSupabaseで上書き（ローカルが新しい場合は保持）
-  const merged = new Map(local.map(e => [e.date, e]));
+  const merged = new Map(freshLocal.map(e => [e.date, e]));
   (data || []).forEach(row => {
+    if (deletedDates.has(row.date)) return; // 削除済みはSupabaseから復活させない
     const localEntry = merged.get(row.date);
     const localTs    = localEntry?.ts ? new Date(localEntry.ts).getTime() : 0;
     const sbTs       = row.updated_at  ? new Date(row.updated_at).getTime()  : 0;
@@ -373,7 +391,7 @@ async function syncPhotosForMonth(ym) {
     if (resp.status === 401) { showToast('セッション期限切れ。再ログインしてください。'); return; }
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     const data = await resp.json();
-    data.forEach(row => { if (row.photo) sbPhotoCache.set(row.date, row.photo); });
+    data.forEach(row => { if (row.photo && !sbPhotoCache.has(row.date)) sbPhotoCache.set(row.date, row.photo); });
   } catch (err) {
     console.error('syncPhotosForMonth error:', err);
     showToast('写真の取得に失敗: ' + (err.message || '通信エラー'));
@@ -417,6 +435,17 @@ function saveEntries(entries) {
   }
 }
 
+const DELETED_KEY = 'dailyjournal_deleted';
+
+function loadDeletedDates() {
+  try { return new Set(JSON.parse(localStorage.getItem(DELETED_KEY)) || []); }
+  catch { return new Set(); }
+}
+
+function saveDeletedDates(set) {
+  localStorage.setItem(DELETED_KEY, JSON.stringify([...set]));
+}
+
 function showToast(msg) {
   const t = document.getElementById('save-toast');
   t.textContent = msg;
@@ -450,6 +479,7 @@ function initNav() {
       document.getElementById('screen-' + target).classList.add('active');
       btn.classList.add('active');
       if (editingEntry) {
+        if (!confirm('編集中の内容が破棄されます。よろしいですか？')) return;
         editingEntry = null;
         resetForm();
       }
@@ -627,7 +657,10 @@ function initSave() {
       if (isNewCapture && document.getElementById('screen-history').classList.contains('active')) {
         renderHistory();
       }
-      await sbPush({ ...entry, photo: photoForPush });
+      const ok = await sbPush({ ...entry, photo: photoForPush });
+      if (!ok && photoForPush) {
+        showToast('写真のクラウド保存に失敗しました。次回ログイン時に再試行します。');
+      }
     })();
   });
 }
@@ -795,6 +828,9 @@ function renderTimeline(filtered, entries) {
       const dx = e.changedTouches[0].clientX - txStart;
       if (dx > 80) {
         if (confirm('この記録を削除しますか？')) {
+          const deleted = loadDeletedDates();
+          deleted.add(entry.date);
+          saveDeletedDates(deleted);
           saveEntries(loadEntries().filter(e => e.date !== entry.date));
           sbDelete(entry.date);
           renderHistory();
@@ -852,6 +888,9 @@ function initModal() {
   document.getElementById('modal-delete').addEventListener('click', () => {
     if (!confirm('この記録を削除しますか？')) return;
     const dateToDelete = modal.dataset.entryDate;
+    const deleted = loadDeletedDates();
+    deleted.add(dateToDelete);
+    saveDeletedDates(deleted);
     saveEntries(loadEntries().filter(e => e.date !== dateToDelete));
     close();
     renderHistory();
@@ -965,7 +1004,7 @@ function exportData() {
   a.download = `dailyjournal_${todayKey()}.json`;
   a.click();
   URL.revokeObjectURL(url);
-  showToast(`${entries.length}件をエクスポートしました`);
+  showToast(`${entries.length}件をエクスポートしました（写真は含まれません）`);
 }
 
 /* ── インポート ── */
@@ -990,7 +1029,9 @@ function importData(file) {
     (async () => {
       for (const entry of imported) {
         if (entry.photo) sbPhotoCache.set(entry.date, entry.photo);
-        await sbPush(entry);
+        // photo が null のまま送ると Supabase 側の既存写真を消してしまうため
+        // undefined にして JSON.stringify で省略させ、既存値を保持する
+        await sbPush({ ...entry, photo: entry.photo || undefined });
       }
       renderHistory();
     })();
