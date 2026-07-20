@@ -316,18 +316,30 @@ async function sbSync() {
     return;
   }
 
-  const local   = loadEntries();
-  const sbDates = new Set((data || []).map(r => r.date));
+  const local = loadEntries();
+  // date → Supabase行 のマップ（タイムスタンプ比較に使う）
+  const sbMap = new Map((data || []).map(r => [r.date, r]));
 
+  // ローカルの記録がSupabaseより新しい場合（または未プッシュ）は送信する
+  // （sbPushが失敗していた場合でも次回ログイン時にリカバリできるようにする）
   for (const entry of local) {
-    if (!sbDates.has(entry.date)) {
+    const sbRow   = sbMap.get(entry.date);
+    const localTs = entry.ts ? new Date(entry.ts).getTime() : 0;
+    const sbTs    = sbRow?.updated_at ? new Date(sbRow.updated_at).getTime() : -1;
+    if (localTs > sbTs) {
       const photoData = sbPhotoCache.get(entry.date) || entry.photo || undefined;
       await sbPush({ ...entry, photo: photoData });
     }
   }
 
+  // マージ：Supabaseが新しい場合のみSupabaseで上書き（ローカルが新しい場合は保持）
   const merged = new Map(local.map(e => [e.date, e]));
-  (data || []).forEach(row => merged.set(row.date, rowToEntry(row)));
+  (data || []).forEach(row => {
+    const localEntry = merged.get(row.date);
+    const localTs    = localEntry?.ts ? new Date(localEntry.ts).getTime() : 0;
+    const sbTs       = row.updated_at  ? new Date(row.updated_at).getTime()  : 0;
+    if (sbTs >= localTs) merged.set(row.date, rowToEntry(row));
+  });
   const sorted = [...merged.values()].sort((a, b) => b.date.localeCompare(a.date));
   saveEntries(sorted);
 
