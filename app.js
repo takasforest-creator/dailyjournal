@@ -325,20 +325,24 @@ async function sbSync() {
   }
 
   const deletedDates = loadDeletedDates();
+  const pendingPhotos = loadPendingPhotos();
   const local = loadEntries();
   // date → Supabase行 のマップ（タイムスタンプ比較に使う）
   const sbMap = new Map((data || []).map(r => [r.date, r]));
 
-  // ローカルの記録がSupabaseより新しい場合（または未プッシュ）は送信する
+  // ローカルの記録がSupabaseより新しい場合（または写真の未送信がある）は送信する
   // （sbPushが失敗していた場合でも次回ログイン時にリカバリできるようにする）
   for (const entry of local) {
     if (deletedDates.has(entry.date)) continue;
     const sbRow   = sbMap.get(entry.date);
     const localTs = entry.ts ? new Date(entry.ts).getTime() : 0;
     const sbTs    = sbRow?.updated_at ? new Date(sbRow.updated_at).getTime() : -1;
-    if (localTs > sbTs) {
-      const photoData = sbPhotoCache.get(entry.date) || entry.photo || undefined;
-      await sbPush({ ...entry, photo: photoData });
+    // pendingPhotos にある場合は写真未送信のリトライが必要なので必ず送る
+    const pendingPhoto = pendingPhotos.get(entry.date);
+    const photoData = sbPhotoCache.get(entry.date) || pendingPhoto || entry.photo || undefined;
+    if (localTs > sbTs || pendingPhoto) {
+      const ok = await sbPush({ ...entry, photo: photoData });
+      if (ok && pendingPhoto) clearPendingPhoto(entry.date);
     }
   }
 
@@ -444,6 +448,37 @@ function loadDeletedDates() {
 
 function saveDeletedDates(set) {
   localStorage.setItem(DELETED_KEY, JSON.stringify([...set]));
+}
+
+// Supabaseへの写真アップロードに失敗した場合、再ログイン後に再試行できるよう
+// 写真データをlocalStorageに一時保持する（アップロード成功後に削除）
+const PHOTO_PENDING_KEY = 'dailyjournal_photo_pending';
+
+function loadPendingPhotos() {
+  try { return new Map(Object.entries(JSON.parse(localStorage.getItem(PHOTO_PENDING_KEY) || '{}'))); }
+  catch { return new Map(); }
+}
+
+function savePendingPhoto(date, base64) {
+  try {
+    const map = loadPendingPhotos();
+    map.set(date, base64);
+    localStorage.setItem(PHOTO_PENDING_KEY, JSON.stringify(Object.fromEntries(map)));
+  } catch (e) {
+    console.warn('savePendingPhoto failed (quota?):', e);
+  }
+}
+
+function clearPendingPhoto(date) {
+  try {
+    const map = loadPendingPhotos();
+    if (!map.has(date)) return;
+    map.delete(date);
+    if (map.size === 0) localStorage.removeItem(PHOTO_PENDING_KEY);
+    else localStorage.setItem(PHOTO_PENDING_KEY, JSON.stringify(Object.fromEntries(map)));
+  } catch (e) {
+    console.warn('clearPendingPhoto failed:', e);
+  }
 }
 
 function showToast(msg) {
@@ -653,12 +688,18 @@ function initSave() {
       // 新規撮影でなければキャッシュ済みの既存写真を維持。キャッシュに無ければ
       // photo を省略して Supabase 側の既存値を保持する（誤って消さないため）
       const photoForPush = isNewCapture ? photoBase64 : (sbPhotoCache.get(entry.date) || undefined);
-      if (photoForPush) sbPhotoCache.set(entry.date, photoForPush);
+      if (photoForPush) {
+        sbPhotoCache.set(entry.date, photoForPush);
+        // アップロード失敗時に再ログイン後も再試行できるよう先に永続化しておく
+        savePendingPhoto(entry.date, photoForPush);
+      }
       if (isNewCapture && document.getElementById('screen-history').classList.contains('active')) {
         renderHistory();
       }
       const ok = await sbPush({ ...entry, photo: photoForPush });
-      if (!ok && photoForPush) {
+      if (ok && photoForPush) {
+        clearPendingPhoto(entry.date); // アップロード成功 → 一時保持を解除
+      } else if (!ok && photoForPush) {
         showToast('写真のクラウド保存に失敗しました。次回ログイン時に再試行します。');
       }
     })();
